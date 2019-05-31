@@ -2,14 +2,15 @@
 //Imports
 import java.time.Instant
 
-import sbt.Def
-import sbt.Keys._
+import sbt.{Def, Opts, ScmInfo, url}
+import sbt.Keys.{scmInfo, _}
+import sbt.librarymanagement.Developer
 
 object Common {
 
   //Common Settings
   val useScalaVersion: String = "2.12.6"
-  val useOrganization: String = "zeab"
+  val useOrganization: String = "com.github.zeab"
 
   //Get the current build time since epoch
   val buildTime: String = Instant.now.getEpochSecond.toString
@@ -30,7 +31,22 @@ object Common {
     Seq(
       version := versionNumber,
       scalaVersion := useScalaVersion,
-      organization := useOrganization
+      organization := useOrganization,
+      homepage := Some(url("https://github.com/zeab/aenea")),
+      scmInfo := Some(ScmInfo(url("https://github.com/zeab/aenea"), "https://github.com/zeab/aenea.git")),
+      licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),
+      publishMavenStyle := true,
+      publishTo := Some(
+        if (isSnapshot.value) Opts.resolver.sonatypeSnapshots
+        else Opts.resolver.sonatypeStaging
+      ),
+      developers := List(
+        Developer( "com.github.zeab",
+          "Kevin Kosnik-Downs",
+          "pyrosrppltoo@gmail.com",
+          url("https://github.com/zeab"))), 
+      publishConfiguration := publishConfiguration.value.withOverwrite(true),
+      publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true)
     )
   }
 
