@@ -60,6 +60,7 @@ object XmlDeserialize extends AeneaToolbox {
     if (possibleNodeSeq.isEmpty) Left(new Exception(s"Could not found node: $paramName"))
     else {
       val possibleNodeValue: String = possibleNodeSeq.text
+      val ee = paramTypes.headOption.getOrElse("")
       paramTypes.headOption.getOrElse("") match {
         case "String" | "Any" => Right(possibleNodeValue)
         //      case "Char" =>
@@ -105,7 +106,30 @@ object XmlDeserialize extends AeneaToolbox {
               case Left(ex) => Left(ex)
             }
         case "Unit" | "Either" => Left(new Exception("Error!! Unsupported Type"))
-        case _ => deserialize(paramTypes, loadString(possibleNodeSeq.toString))
+        case itemName if itemName.startsWith("(") =>
+
+          val x = itemName
+            .replace("(", "")
+            .replace(")", "")
+            .split(',')
+            .map(_.trim)
+            .toList
+
+          val kk = coreDeserialize(paramName, x, xml)
+
+          println()
+
+          //believe it or not this seems to be what a tuple registers as...
+          val theList: List[Either[Throwable, Any]] =
+            possibleNodeSeq.map { node =>
+              //Have to add a root tag so that it can be "found" inside the xml... the text is irrelevant existence is all that matters
+              coreDeserialize(paramName, paramTypes.drop(1), <root>{node.asInstanceOf[Elem]}</root>)
+            }.toList
+          //Flatten so that we only keep
+          flattenEitherValues(theList)
+        case _ =>
+          println()
+          deserialize(paramTypes, loadString(possibleNodeSeq.toString))
       }
     }
   }

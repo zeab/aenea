@@ -14,7 +14,7 @@ import scala.xml.XML.loadString
 //TODO Come back to this ... https://www.tutorialspoint.com/scala/scala_data_types.htm
 //TODO https://www.cs.helsinki.fi/u/wikla/OTS/Sisalto/examples/html/ch26.html
 //TODO Decide what to do about empty value inside a list... do I return a blank... or do I shorten the returned list by 1
-object XmlSerialize extends AeneaToolbox {
+object XmlSerialize extends AeneaToolbox{
 
   def xmlSerialize[T](input: Any)(implicit typeTag: TypeTag[T]): Either[Throwable, T] = {
     implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
@@ -71,6 +71,43 @@ object XmlSerialize extends AeneaToolbox {
         flattenEitherValuesAndRightString(theList)
       case "Right" | "Left" => Left(new Exception(s"Unsupported Type for Serialization: Either"))
       case "Null" => Right(s"<$paramName/>")
+      case  itemName if itemName.startsWith("Tuple") =>
+        itemName.takeRight(1) match {
+          case "1" =>
+            val valueOne: Any = obj.asInstanceOf[Any]
+            coreSerialize(valueOne, paramName)
+          case "2" =>
+            val (valueOne, valueTwo): (Any, Any) = obj.asInstanceOf[(Any, Any)]
+            for{
+              one <- coreSerialize(valueOne, paramName)
+              two <- coreSerialize(valueTwo, paramName)
+            }yield one + two
+          case "3" =>
+            val (valueOne, valueTwo, valueThree): (Any, Any, Any) = obj.asInstanceOf[(Any, Any, Any)]
+            for{
+              one <- coreSerialize(valueOne, paramName)
+              two <- coreSerialize(valueTwo, paramName)
+              three <- coreSerialize(valueThree, paramName)
+            }yield one + two + three
+          case "4" =>
+            val (valueOne, valueTwo, valueThree, valueFour): (Any, Any, Any, Any) = obj.asInstanceOf[(Any, Any, Any, Any)]
+            for{
+              one <- coreSerialize(valueOne, paramName)
+              two <- coreSerialize(valueTwo, paramName)
+              three <- coreSerialize(valueThree, paramName)
+              four <- coreSerialize(valueFour, paramName)
+            }yield one + two + three + four
+          case "5" =>
+            val (valueOne, valueTwo, valueThree, valueFour, valueFive): (Any, Any, Any, Any, Any) = obj.asInstanceOf[(Any, Any, Any, Any, Any)]
+            for{
+              one <- coreSerialize(valueOne, paramName)
+              two <- coreSerialize(valueTwo, paramName)
+              three <- coreSerialize(valueThree, paramName)
+              four <- coreSerialize(valueFour, paramName)
+              five <- coreSerialize(valueFive, paramName)
+            }yield one + two + three + four + five
+          case _ => Left(new Exception("Tuple type is not supported"))
+        }
       case _ =>
         if (isPrimitive(objName)) Right(s"<$paramName>$obj</$paramName>")
         else
