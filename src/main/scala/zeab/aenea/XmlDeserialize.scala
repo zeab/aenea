@@ -108,17 +108,20 @@ object XmlDeserialize extends AeneaToolbox {
         case "Unit" | "Either" => Left(new Exception("Error!! Unsupported Type"))
         case itemName if itemName.startsWith("(") =>
 
-          val x = itemName
+          val tupleParams: List[String] = itemName
             .replace("(", "")
             .replace(")", "")
             .split(',')
             .map(_.trim)
             .toList
 
-          val kk = coreDeserialize(paramName, x, xml)
+          possibleNodeSeq.map{node =>
+            val possibleNodeValue: String = node.text
+            println()
+          }
+          val g = xml.toString
 
           println()
-
           //believe it or not this seems to be what a tuple registers as...
           val theList: List[Either[Throwable, Any]] =
             possibleNodeSeq.map { node =>

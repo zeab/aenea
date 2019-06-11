@@ -2,12 +2,12 @@ package zeab.aenea
 
 object M extends App {
 
-  val x = Llama(List(("xx", 9, 8 , 2 , 3)))
+  val x = Moose("bert", 9, 10)
   val y = XmlSerialize.xmlSerialize(x)
   println(y)
 
-  val z = "<llama><x>xx</x><x>9</x><x>8</x><x>2</x><x>3</x></llama>"
-  val a = XmlDeserialize.xmlDeserialize[Llama](z)
+  val z = "<moose><prop>bert</prop><prop>9</prop><prop>10</prop></moose>"
+  val a = XmlDeserialize.xmlDeserialize[Moose](z)
   println(a)
 
 }

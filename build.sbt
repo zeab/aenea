@@ -7,7 +7,7 @@ import Dependencies._
 logLevel := Level.Info
 
 //Add all the command alias's
-CommandAlias.allCommandAlias
+CommandAlias.allPublishAlias
 
 lazy val aenea = (project in file("."))
   .settings(rootSettings: _*)
