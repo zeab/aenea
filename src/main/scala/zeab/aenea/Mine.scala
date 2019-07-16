@@ -4,6 +4,22 @@ import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO
 
 object Mine extends App {
 
+  case class Moose[Body](x:String){
+    def mew: Body ={
+      "".asInstanceOf[Body]
+    }
+  }
+
+  val tt = Moose[String]("m").mew
+
+  println()
+
+
+  val x, y = "moose"
+
+  println()
+
+
   def f(a:Int): (Int, String) ={
     val result = a * 2
     (result, s"\nf result: $result")
