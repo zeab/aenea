@@ -9,7 +9,7 @@ import org.scalatest.FunSuite
 class XmlDeserializeComplexClassesSpec extends FunSuite {
 
   test("Person Deserialize") {
-    val xml: String = "<person><name>bob</name><class>warlock</class><level>9</level><health>87.3</health><soulStone/><mount><name>daisy</name><speed>1.4</speed><backpack></backpack></mount><backpack><name>sword</name><type>attack</type></backpack><backpack><name>shield</name><type>defense</type></backpack><previousDestinations>Hogwarts</previousDestinations><previousDestinations>Yavin 4</previousDestinations></person>"
+    val xml: String = "<person><name>bob</name><class>warlock</class><level>9</level><health>87.3</health><soulStone/><mount><name>daisy</name><speed>1.4</speed><backpack></backpack></mount><backpack><item><name>sword</name><type>attack</type></item></backpack><backpack><item><name>shield</name><type>defense</type></item></backpack><previousDestinations>Hogwarts</previousDestinations><previousDestinations>Yavin 4</previousDestinations></person>"
     xmlDeserialize[Person](xml) match {
       case Right(obj) =>
         assert(obj.name == "bob")

@@ -81,10 +81,20 @@ object XmlDeserialize extends AeneaToolbox {
         case "Int" => returnMatch(Try(possibleNodeValue.toInt))
         case "Boolean" => returnMatch(Try(possibleNodeValue.toBoolean))
         case "List" =>
+
+          val gg = possibleNodeSeq.toString
+          println()
+
           if (possibleNodeSeq.toString == s"<$paramName/>") Right(List.empty)
           else {
             val theList: List[Either[Throwable, Any]] =
               possibleNodeSeq.map { node =>
+
+                val x = node.toString()
+                println()
+
+                val y = coreDeserialize(paramName, paramTypes.drop(1), node.asInstanceOf[Elem])
+                println()
                 //Have to add a root tag so that it can be "found" inside the xml... the text is irrelevant existence is all that matters
                 coreDeserialize(paramName, paramTypes.drop(1), <root>{node.asInstanceOf[Elem]}</root>)
               }.toList

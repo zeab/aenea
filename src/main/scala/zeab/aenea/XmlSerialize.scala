@@ -67,7 +67,13 @@ object XmlSerialize extends AeneaToolbox {
       case "$colon$colon" =>
         val theList: List[Either[Throwable, String]] =
           obj.asInstanceOf[List[Any]]
-            .map { node => coreSerialize(node, paramName) }
+            .map { node =>
+              if (isPrimitive(node.getClass.getSimpleName)) coreSerialize(node, paramName)
+              else xmlSerialize[String](node) match {
+                case Right(xml) => Right(s"<$paramName>$xml</$paramName>")
+                case Left(ex) => Left(ex)
+              }
+            }
         flattenEitherValuesAndRightString(theList)
       case "Right" | "Left" => Left(new Exception(s"Unsupported Type for Serialization: Either"))
       case "Null" => Right(s"<$paramName/>")
