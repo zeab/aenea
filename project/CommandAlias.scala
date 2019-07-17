@@ -5,8 +5,9 @@ import sbt.{Def, addCommandAlias}
 object CommandAlias {
 
   //List all Publish Alias here
-  val allPublishAlias: Seq[Def.Setting[_]] = Seq.empty
-
+  val allPublishAlias: Seq[Def.Setting[_]] =
+    addCommandAlias(s"maven", ";test;publishSigned;sonatypeRelease")
+  
   //List all Docker Alias here
   val allDockerAlias: Seq[Def.Setting[_]] = Seq.empty
   //List all Assembly Alias here

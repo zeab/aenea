@@ -3,7 +3,7 @@ package zeab.aenea.serialize
 //Imports
 import zeab.aenea.XmlSerialize._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
-
+//Scala
 import scala.xml.Elem
 import scala.xml.XML.loadString
 //ScalaTest

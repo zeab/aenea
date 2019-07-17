@@ -12,7 +12,7 @@ object Dependencies {
 
   //List of Dependencies
   val D = new {
-    val reflect                     = "org.scala-lang" % "scala-reflect" % "2.12.6"
+    val reflect                     = "org.scala-lang" % "scala-reflect" % V.scalaReflect
     //Test
     val scalaTest                   = "org.scalatest" %% "scalatest" % V.scalaTest
     //Xml
