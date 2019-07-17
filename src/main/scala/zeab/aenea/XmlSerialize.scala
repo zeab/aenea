@@ -68,7 +68,8 @@ object XmlSerialize extends AeneaToolbox {
         val theList: List[Either[Throwable, String]] =
           obj.asInstanceOf[List[Any]]
             .map { node =>
-              if (isPrimitive(node.getClass.getSimpleName)) coreSerialize(node, paramName)
+              val nodeType: String = node.getClass.getSimpleName
+              if (isPrimitive(nodeType) | "Some" == nodeType | "None$" == nodeType) coreSerialize(node, paramName)
               else xmlSerialize[String](node) match {
                 case Right(xml) => Right(s"<$paramName>$xml</$paramName>")
                 case Left(ex) => Left(ex)

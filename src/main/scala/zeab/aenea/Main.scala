@@ -2,14 +2,12 @@ package zeab.aenea
 
 object Main extends App {
 
-  val x = Person("bob", List(Item("sword", "hand"), Item("shield", "hand")))
-  val y = XmlSerialize.xmlSerialize(x)
+  val x = MyList(List(None, Some("xx"), Some("tt")) )
+  val y = XmlSerialize.xmlSerialize[String](x)
 
-  val a = "<person><name>bob</name><backpack><item><name>sword</name><slot>hand</slot></item></backpack><backpack><item><name>shield</name><slot>hand</slot></item></backpack></person>"
-  val b = XmlDeserialize.xmlDeserialize[Person](a)
+  val a = "<myList><myListOption/><myListOption>xx</myListOption><myListOption>tt</myListOption></myList>"
+  val b = XmlDeserialize.xmlDeserialize[MyList](a)
 
   println(b)
-  println(y)
-
 
 }

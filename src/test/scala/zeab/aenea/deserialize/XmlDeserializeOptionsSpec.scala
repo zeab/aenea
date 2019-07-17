@@ -11,9 +11,6 @@ class XmlDeserializeOptionsSpec extends FunSuite {
   test("Option: None Deserialize") {
     val expectedType: String = "MyOptionStringClass"
     val xml: String = "<myOptionStringClass><myOptionString/></myOptionStringClass>"
-
-    val ee = xmlDeserialize[MyOptionStringClass](xml)
-
     xmlDeserialize[MyOptionStringClass](xml) match {
       case Right(obj) =>
         assert(expectedType == obj.getClass.getSimpleName)
@@ -24,6 +21,10 @@ class XmlDeserializeOptionsSpec extends FunSuite {
   test("Option: List[Any] Deserialize") {
     val expectedType: String = "MyOptionListClass"
     val xml: String = "<myOptionListClass><myOptionList>9</myOptionList><myOptionList>llama</myOptionList></myOptionListClass>"
+
+    val g = xmlDeserialize[MyOptionListClass](xml)
+    println()
+
     xmlDeserialize[MyOptionListClass](xml) match {
       case Right(obj) =>
         assert(expectedType == obj.getClass.getSimpleName)

@@ -81,22 +81,24 @@ object XmlDeserialize extends AeneaToolbox {
         case "Int" => returnMatch(Try(possibleNodeValue.toInt))
         case "Boolean" => returnMatch(Try(possibleNodeValue.toBoolean))
         case "List" =>
-
-          val gg = possibleNodeSeq.toString
-          println()
-
           if (possibleNodeSeq.toString == s"<$paramName/>") Right(List.empty)
           else {
             val theList: List[Either[Throwable, Any]] =
               possibleNodeSeq.map { node =>
-
-                val x = node.toString()
-                println()
-
-                val y = coreDeserialize(paramName, paramTypes.drop(1), node.asInstanceOf[Elem])
-                println()
-                //Have to add a root tag so that it can be "found" inside the xml... the text is irrelevant existence is all that matters
-                coreDeserialize(paramName, paramTypes.drop(1), <root>{node.asInstanceOf[Elem]}</root>)
+                paramTypes.drop(1).headOption match {
+                  case Some(param) =>
+                    if (isPrimitive(param) | param == "Option")
+                      coreDeserialize(paramName, paramTypes.drop(1), <root>{node.asInstanceOf[Elem]}</root>)
+                    else if (param == "Any") Left(new Exception("Any is not supported as a decode type"))
+                    else {
+                      node.child.headOption match {
+                        case Some(childNode) =>
+                          deserialize(paramTypes.drop(1), childNode.asInstanceOf[Elem])
+                        case None => Left(new Exception("unable to find child node for object"))
+                      }
+                    }
+                  case None => Left(new Exception("unable to find the next param type in the list but we have xml left to parse"))
+                }
               }.toList
             //Flatten so that we only keep
             flattenEitherValues(theList)
@@ -129,7 +131,7 @@ object XmlDeserialize extends AeneaToolbox {
     (paramName, paramTypes)
   }
 
-  private def returnMatch(theTry:Try[Any]): Either[Throwable, Any] =
+  private def returnMatch(theTry: Try[Any]): Either[Throwable, Any] =
     theTry match {
       case Success(value) => Right(value)
       case Failure(ex) => Left(ex)
