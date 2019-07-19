@@ -1,5 +1,7 @@
 package zeab.aenea
 
+import zeab.models._
+
 object Main extends App {
 
   val t = Map("loyaltyMember" -> List(Item("shield", "hand"), Item("shield", "hand")))
@@ -24,6 +26,7 @@ object Main extends App {
     Item("horse", "mount")
   )
 
+  val j = Other("sd", false, Some("asd"))
   val x = Items(List(Item("sword", "hand")))//List(Item("sword", "hand"), Item("shield", "hand"), Item("horse", "mount"))
   val y = XmlSeri.xmlSerialize(g)
 

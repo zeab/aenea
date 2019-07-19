@@ -1,4 +1,4 @@
-package zeab.aenea
+package zeab.models
 
 case class Moose(
                   x: Item*
