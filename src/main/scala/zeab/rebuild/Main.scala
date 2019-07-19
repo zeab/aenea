@@ -574,8 +574,11 @@ object Main extends App {
     Some(List(Item("xx", "yy"), Item("qq", "nn")))
   )
   val k = Speeder(None)
+  val l = Crab(List("ww", "xx"))
 
-  val z = XmlSerializer.xmlSerialize(j)
+  val m = Map("llama" -> d)
+
+  val z = XmlSerializer.xmlSerialize(m)
 
   println(z)
 
