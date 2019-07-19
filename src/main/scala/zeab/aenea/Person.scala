@@ -4,5 +4,5 @@ case class Person(
                    name: String,
                    backpack: List[Item],
                    health: Int,
-                   chat: List[String]
+                   nickNames: List[String]
                  )
