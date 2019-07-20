@@ -15,9 +15,9 @@ import RunTimeMirror._
 
 object XmlSerializer extends AeneaCore {
 
-  def xmlSerialize(obj: Any): Either[Throwable, String] = {
-    val objName: String = getObjName(obj)
-    serialize(obj)
+  implicit class XmlSerialize(obj: Any) {
+    def asXml: Either[Throwable, String] =
+      serialize(obj)
   }
 
   def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] ={
@@ -111,7 +111,7 @@ object XmlSerializer extends AeneaCore {
             Right(s"<$mirrorKey>$cleanedXml</$mirrorKey>")
           case Left(ex) => Left(ex)
         }
-      case _ => xmlSerialize(mirrorValue)
+      case _ => serialize(mirrorValue)
     }
   }
 

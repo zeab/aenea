@@ -3,9 +3,10 @@ package zeab.rebuild
 import zeab.models.Item
 import zeab.models.other._
 import zeab.models.rew2.{LoyaltyProgram, PursePoint, RewardLevel, Tier}
-import zeab.models.rewards.Backpack
+import XmlSerializer._
 
 object Main extends App {
+
 
   Map("salesTransactions" ->
     List(
@@ -615,8 +616,8 @@ object Main extends App {
 
   val q = Map("loyaltyPrograms" -> List(n, n))
 
-  val z = XmlSerializer.xmlSerialize(q)
+  val eee = q.asXml
 
-  println(z)
+  println(eee)
 
 }
