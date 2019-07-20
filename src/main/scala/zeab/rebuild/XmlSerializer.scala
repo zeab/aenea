@@ -8,10 +8,9 @@ package zeab.rebuild
   */
 
 //Imports
+import zeab.rebuild.RunTimeMirror._
+//Scala
 import scala.reflect.runtime.universe._
-import scala.util.{Failure, Success, Try}
-import scala.xml.XML.loadString
-import RunTimeMirror._
 
 object XmlSerializer extends AeneaCore {
 
@@ -20,19 +19,19 @@ object XmlSerializer extends AeneaCore {
       serialize(obj)
   }
 
-  def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] ={
+  def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val objName: String = getObjName(obj)
     objName match {
       case "String" | "Integer" | "Double" | "Boolean" | "Some" | "None$" | "Right" | "Left" | "Null" =>
-        Left(new Exception("cannot do this"))
+        Left(new Exception("cannot serialize on a primitive"))
       case "Vector" =>
         Left(new Exception("not implemented"))
       case x if x.contains("Map") =>
         val (paramKeys, paramValues) =
-        obj.asInstanceOf[Map[String, Any]].map{param =>
-          val (paramKey, paramValue): (String, Any) = param
-          (paramKey, serialize(paramValue))
-        }.unzip
+          obj.asInstanceOf[Map[String, Any]].map { param =>
+            val (paramKey, paramValue): (String, Any) = param
+            (paramKey, serialize(paramValue))
+          }.unzip
         flattenEitherValuesAndRightString(paramValues.toList) match {
           case Right(xml) =>
             val key: String = paramKeys.headOption.getOrElse("")
@@ -41,9 +40,7 @@ object XmlSerializer extends AeneaCore {
         }
       case "$colon$colon" =>
         val params: List[Either[Throwable, String]] =
-          obj.asInstanceOf[List[Any]].map{ param =>
-            serialize(param)
-          }
+          obj.asInstanceOf[List[Any]].map { param => serialize(param) }
         flattenEitherValuesAndRightString(params)
       case _ =>
         val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
@@ -63,7 +60,7 @@ object XmlSerializer extends AeneaCore {
     }
   }
 
-  def coreSerialize(mirrorKey:String, mirrorValue:Any)(implicit mirror: Mirror): Either[Throwable, String] ={
+  def coreSerialize(mirrorKey: String, mirrorValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val mirrorValueType: String = getObjName(mirrorValue)
     mirrorValueType match {
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" =>
@@ -98,7 +95,7 @@ object XmlSerializer extends AeneaCore {
         }
       case "$colon$colon" =>
         val params: List[Either[Throwable, String]] =
-          mirrorValue.asInstanceOf[List[Any]].map{ param =>
+          mirrorValue.asInstanceOf[List[Any]].map { param =>
             val paramType: String = getObjName(param)
             paramType match {
               case "String" | "Integer" | "Double" | "Boolean" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
