@@ -4,6 +4,7 @@ import zeab.models.Item
 import zeab.models.other._
 import zeab.models.rew2.{LoyaltyProgram, PursePoint, RewardLevel, Tier}
 import XmlSerializer._
+import zeab.models.sadsd.LoyaltyProgram11
 
 object Main extends App {
 
@@ -616,7 +617,14 @@ object Main extends App {
 
   val q = Map("loyaltyPrograms" -> List(n, n))
 
-  val eee = q.asXml
+  val v = LoyaltyProgram11(
+    Vector(
+      n,
+      n
+    )
+  )
+
+  val eee = v.asXml
 
   println(eee)
 
