@@ -2,6 +2,7 @@ package zeab.rebuild
 
 import zeab.models.Item
 import zeab.models.other._
+import zeab.models.rew2.{LoyaltyProgram, PursePoint, RewardLevel, Tier}
 import zeab.models.rewards.Backpack
 
 object Main extends App {
@@ -576,9 +577,45 @@ object Main extends App {
   val k = Speeder(None)
   val l = Crab(List("ww", "xx"))
 
-  val m = Map("llama" -> d)
+  val m = Map("momajamma" -> j)
+  val n =
+    LoyaltyProgram(
+      List(
+        Tier(
+          List(
+            RewardLevel(
+              "sdf",
+              "sgf",
+              "sefe"
+            ),
+            RewardLevel(
+              "sdf",
+              "sgf",
+              "sefe"
+            )
+          ),
+          PursePoint(
+            "ex",
+            "exit",
+            "fgff"
+          ),
+          "ss"
+        )
+      ),
+      "moose",
+      "llama",
+      "3",
+      "us"
+    )
+  val o = Guard(Set(Item("fwef", "asd"), Item("fwef", "asd")))
 
-  val z = XmlSerializer.xmlSerialize(m)
+  val s = Llama(Vector(Item("fwef", "asd"), Item("fwef", "asd")))
+
+  val p = Llama2(List(Item("fwef", "asd"), Item("fwef", "asd")))
+
+  val q = Map("loyaltyPrograms" -> List(n, n))
+
+  val z = XmlSerializer.xmlSerialize(q)
 
   println(z)
 

@@ -25,10 +25,26 @@ object XmlSerializer extends AeneaCore {
     objName match {
       case "String" | "Integer" | "Double" | "Boolean" | "Some" | "None$" | "Right" | "Left" | "Null" =>
         Left(new Exception("cannot do this"))
-//      case x if x.contains("Map") =>
-//        Left(new Exception("lllost"))
-//      case "$colon$colon" =>
-//        Left(new Exception("bert"))
+      case "Vector" =>
+        Left(new Exception("not implemented"))
+      case x if x.contains("Map") =>
+        val (paramKeys, paramValues) =
+        obj.asInstanceOf[Map[String, Any]].map{param =>
+          val (paramKey, paramValue): (String, Any) = param
+          (paramKey, serialize(paramValue))
+        }.unzip
+        flattenEitherValuesAndRightString(paramValues.toList) match {
+          case Right(xml) =>
+            val key: String = paramKeys.headOption.getOrElse("")
+            Right(s"<$key>$xml</$key>")
+          case Left(ex) => Left(ex)
+        }
+      case "$colon$colon" =>
+        val params: List[Either[Throwable, String]] =
+          obj.asInstanceOf[List[Any]].map{ param =>
+            serialize(param)
+          }
+        flattenEitherValuesAndRightString(params)
       case _ =>
         val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
         val possibleXml: List[Either[Throwable, String]] =
@@ -63,6 +79,23 @@ object XmlSerializer extends AeneaCore {
         }
       case "Right" | "Left" =>
         Left(new Exception("unsupported Left|Right"))
+      case "Vector" =>
+        val params: List[Either[Throwable, String]] =
+          mirrorValue.asInstanceOf[Vector[Any]].map { param =>
+            val paramType: String = getObjName(param)
+            paramType match {
+              case "String" | "Integer" | "Double" | "Boolean" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
+              case _ => serialize(param)
+            }
+          }.toList
+        flattenEitherValuesAndRightString(params) match {
+          case Right(xml) =>
+            xml match {
+              case "" => Right(s"<$mirrorKey/>")
+              case _ => Right(xml)
+            }
+          case Left(ex) => Left(ex)
+        }
       case "$colon$colon" =>
         val params: List[Either[Throwable, String]] =
           mirrorValue.asInstanceOf[List[Any]].map{ param =>
