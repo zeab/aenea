@@ -8,8 +8,7 @@ object XmlSerializer {
 
   implicit class XmlSerialize(obj: Any) {
     implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-    def asXml: Either[Throwable, String] =
-      serialize(obj)
+    def asXml: Either[Throwable, String] = serialize(obj)
   }
 
   private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
@@ -17,7 +16,7 @@ object XmlSerializer {
     objName match {
       case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" =>
         Left(new Exception("cannot serialize on a primitive"))
-      case "Vector" | "$colon$colon"=> Left(new Exception("not implemented"))
+      case "Vector" | "$colon$colon" => Left(new Exception("not implemented"))
       case x if x.contains("Map") => Left(new Exception("not implemented"))
       case _ =>
         val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
@@ -83,13 +82,13 @@ object XmlSerializer {
       eitherValues.collect { case Right(r) => r }.mkString
     }
 
-  private def getObjName(obj:Any): String =
+  private def getObjName(obj: Any): String =
     Try(obj.getClass.getSimpleName) match {
       case Success(name) => name
       case Failure(_) => "Null"
     }
 
-  private def serializeDecider(param:Any, mirrorKey:String)(implicit mirror: Mirror): Either[Throwable, String] =
+  private def serializeDecider(param: Any, mirrorKey: String)(implicit mirror: Mirror): Either[Throwable, String] =
     getObjName(param) match {
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
       case _ => serialize(param)
