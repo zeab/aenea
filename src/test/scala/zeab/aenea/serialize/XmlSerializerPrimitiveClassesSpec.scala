@@ -13,7 +13,7 @@ import org.scalatest.FunSuite
 
 class XmlSerializerPrimitiveClassesSpec extends FunSuite {
 
-  test("Double [String] Serialize") {
+  test("Double Serialize") {
     val obj: MyDoubleClass = MyDoubleClass(1.1)
     val serializedXml: Either[Throwable, String] = obj.asXml
     val expectedXml: String = validXml("Double", 1.1.toString)

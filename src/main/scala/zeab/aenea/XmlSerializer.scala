@@ -15,28 +15,10 @@ object XmlSerializer {
   private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val objName: String = getObjName(obj)
     objName match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" =>
+      case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" =>
         Left(new Exception("cannot serialize on a primitive"))
-      case "Vector" =>
-        Left(new Exception("not implemented"))
-      case x if x.contains("Map") =>
-        val (paramKeys, paramValues) =
-          obj.asInstanceOf[Map[String, Any]].map { param =>
-            val (paramKey, paramValue): (String, Any) = param
-            (paramKey, serialize(paramValue))
-          }.unzip
-        flattenEitherValuesAndRightString(paramValues.toList) match {
-          case Right(xml) =>
-            val key: String = paramKeys.headOption.getOrElse("")
-            Right(s"<$key>$xml</$key>")
-          case Left(ex) => Left(ex)
-        }
-        Left(new Exception("not implemented"))
-      case "$colon$colon" =>
-        val params: List[Either[Throwable, String]] =
-          obj.asInstanceOf[List[Any]].map { param => serialize(param) }
-        flattenEitherValuesAndRightString(params)
-        Left(new Exception("not implemented"))
+      case "Vector" | "$colon$colon"=> Left(new Exception("not implemented"))
+      case x if x.contains("Map") => Left(new Exception("not implemented"))
       case _ =>
         val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
         val possibleXml: List[Either[Throwable, String]] =
@@ -55,9 +37,8 @@ object XmlSerializer {
     }
   }
 
-  private def coreSerialize(mirrorKey: String, mirrorValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
-    val mirrorValueType: String = getObjName(mirrorValue)
-    mirrorValueType match {
+  private def coreSerialize(mirrorKey: String, mirrorValue: Any)(implicit mirror: Mirror): Either[Throwable, String] =
+    getObjName(mirrorValue) match {
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" =>
         mirrorValue.toString match {
           case "" => Right(s"<$mirrorKey/>")
@@ -68,8 +49,8 @@ object XmlSerializer {
           case Some(optionValue) => coreSerialize(mirrorKey, optionValue)
           case None => Right(s"<$mirrorKey/>")
         }
-      case "Right" | "Left" =>
-        Left(new Exception("unsupported Left|Right"))
+      case "Nil$" => Right(s"<$mirrorKey/>")
+      case "Right" | "Left" => Left(new Exception("unsupported Left|Right"))
       case "Vector" =>
         val params: List[Either[Throwable, String]] =
           mirrorValue.asInstanceOf[Vector[Any]].map { param =>
@@ -96,13 +77,11 @@ object XmlSerializer {
         }
       case _ => serialize(mirrorValue)
     }
-  }
 
-  private def flattenEitherValuesAndRightString(eitherValues: List[Either[Throwable, String]]): Either[Throwable, String] = {
+  private def flattenEitherValuesAndRightString(eitherValues: List[Either[Throwable, String]]): Either[Throwable, String] =
     eitherValues.collectFirst { case Left(f) => f }.toLeft {
       eitherValues.collect { case Right(r) => r }.mkString
     }
-  }
 
   private def getObjName(obj:Any): String =
     Try(obj.getClass.getSimpleName) match {
@@ -110,12 +89,10 @@ object XmlSerializer {
       case Failure(_) => "Null"
     }
 
-  private def serializeDecider(param:Any, mirrorKey:String)(implicit mirror: Mirror): Either[Throwable, String] ={
-    val paramType: String = getObjName(param)
-    paramType match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
+  private def serializeDecider(param:Any, mirrorKey:String)(implicit mirror: Mirror): Either[Throwable, String] =
+    getObjName(param) match {
+      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
       case _ => serialize(param)
     }
-  }
 
 }
