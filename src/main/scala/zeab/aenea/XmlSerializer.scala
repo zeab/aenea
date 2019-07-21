@@ -15,7 +15,7 @@ object XmlSerializer {
   private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val objName: String = getObjName(obj)
     objName match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Some" | "None$" | "Right" | "Left" | "Null" =>
+      case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" =>
         Left(new Exception("cannot serialize on a primitive"))
       case "Vector" =>
         Left(new Exception("not implemented"))
@@ -58,7 +58,7 @@ object XmlSerializer {
   private def coreSerialize(mirrorKey: String, mirrorValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val mirrorValueType: String = getObjName(mirrorValue)
     mirrorValueType match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" =>
+      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" =>
         mirrorValue.toString match {
           case "" => Right(s"<$mirrorKey/>")
           case _ => Right(s"<$mirrorKey>$mirrorValue</$mirrorKey>")
