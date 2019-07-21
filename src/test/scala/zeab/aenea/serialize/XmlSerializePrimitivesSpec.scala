@@ -1,6 +1,8 @@
 package zeab.aenea.serialize
 
 //Imports
+import org.scalatest.Assertion
+import zeab.aenea.XmlSerializer._
 import zeab.aenea.XmlSerialize._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
 //Scala
@@ -13,7 +15,7 @@ class XmlSerializePrimitivesSpec extends FunSuite {
 
   test("Double [String] Serialize") {
     val obj: MyDoubleClass = MyDoubleClass(1.1)
-    val serializedXml: Either[Throwable, String] = xmlSerialize(obj)
+    val serializedXml: Either[Throwable, String] = obj.asXml
     val expectedXml: String = validXml("Double", 1.1.toString)
     assert {
       serializedXml match {
@@ -158,8 +160,15 @@ class XmlSerializePrimitivesSpec extends FunSuite {
 
   test("Unit Serialize") {
     val obj: MyUnitClass = MyUnitClass(Unit)
-    val serializedXml: Either[Throwable, String] = xmlSerialize(obj)
+    val serializedXml: Either[Throwable, String] = obj.asXml
     val expectedError: String = "scala.ScalaReflectionException: Scala field myUnit  of class MyUnitClass isn't represented as a Java field, nor does it have a\nJava accessor method. One common reason for this is that it may be a private class parameter\nnot used outside the primary constructor."
+    validateXml(serializedXml, expectedError)
+  }
+
+  def validXml(key: String, value: String): String =
+    s"<my${key}Class><my$key>$value</my$key></my${key}Class>"
+
+  def validateXml(serializedXml: Either[Throwable, String], expectedError:String): Assertion ={
     assert {
       serializedXml match {
         case Right(_) => false
@@ -168,7 +177,13 @@ class XmlSerializePrimitivesSpec extends FunSuite {
     }
   }
 
-  def validXml(key: String, value: String): String =
-    s"<my${key}Class><my$key>$value</my$key></my${key}Class>"
+  def validateErrorXml(serializedXml: Either[Throwable, String], expectedError:String): Assertion ={
+    assert {
+      serializedXml match {
+        case Right(_) => false
+        case Left(ex) => ex.toString == expectedError
+      }
+    }
+  }
 
 }
