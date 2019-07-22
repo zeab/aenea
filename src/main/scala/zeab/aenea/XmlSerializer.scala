@@ -54,9 +54,7 @@ object XmlSerializer {
       case "Right" | "Left" => Left(new Exception("unsupported Left|Right"))
       case "Vector" =>
         val params: List[Either[Throwable, String]] =
-          mirrorValue.asInstanceOf[Vector[Any]].map { param =>
-            serializeDecider(param, mirrorKey)
-          }.toList
+          mirrorValue.asInstanceOf[Vector[Any]].map { param => serializeDecider(param, mirrorKey) }.toList
         flattenEitherValuesAndRightString(params) match {
           case Right(xml) =>
             xml match {
@@ -67,9 +65,7 @@ object XmlSerializer {
         }
       case "$colon$colon" =>
         val params: List[Either[Throwable, String]] =
-          mirrorValue.asInstanceOf[List[Any]].map { param =>
-            serializeDecider(param, mirrorKey)
-          }
+          mirrorValue.asInstanceOf[List[Any]].map { param => serializeDecider(param, mirrorKey) }
         flattenEitherValuesAndRightString(params) match {
           case Right(rawXml) =>
             val cleanedXml: String = rawXml.replace(s"<$mirrorKey/>", "")
@@ -78,8 +74,7 @@ object XmlSerializer {
         }
       case _ =>
         serialize(mirrorValue) match {
-          case Right(xml) =>
-            Right(s"<$mirrorKey>$xml</$mirrorKey>")
+          case Right(xml) => Right(s"<$mirrorKey>$xml</$mirrorKey>")
           case Left(ex) => Left(ex)
         }
     }
