@@ -10,7 +10,7 @@ package zeab.aenea
 //Imports
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, NodeSeq}
+import scala.xml.{Elem, Node, NodeSeq}
 import scala.xml.XML.loadString
 
 object XmlDeserializer {
@@ -19,25 +19,61 @@ object XmlDeserializer {
     def fromXml[T](implicit typeTag: TypeTag[T]): Either[Throwable, T] ={
       implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
       Try(loadString(input)) match {
-        case Success(xml) => deserialize[T](xml)
+        case Success(xml) =>
+          val inputType:String = typeTag.tpe.toString
+          ddd(inputType, xml) match {
+            case Right(obj) => Right(obj.asInstanceOf[T])
+            case Left(ex) => Left(ex)
+          }
         case Failure(ex) => Left(ex)
       }
     }
   }
 
+  def ddd(inputType: String, xml: Seq[Node])(implicit mirror: Mirror):  Either[Throwable, Any] ={
+    val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
+    val reflectedValues =
+      reflectedClass.typeSignature.members
+        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
+        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
+        .reverse.toList
+
+    println()
+    ???
+  }
+
+  def deser(xml: Elem, inputType:String)(implicit mirror: Mirror): Either[Throwable, Any] ={
+    val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
+    val reflectedValues =
+      reflectedClass.typeSignature.members
+        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
+        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
+        .reverse.toList
+    val ggg = reflectedValues
+      .map{ symbolInfo =>
+        val (symbolName, symbolType): (String, String) = symbolInfo
+        //coreDeserialize(xml, symbolName, symbolType )
+        symbolInfo
+      }
+    println()
+    ???
+  }
+
   private def deserialize[T](xml: Elem)(implicit mirror: Mirror, typeTag: TypeTag[T]): Either[Throwable, T] = {
     val inputType:String = typeTag.tpe.toString
     val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
-    val reflectedType: Type = reflectedClass.typeSignature
     val reflectedValues =
-      reflectedType.members.toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
-        .map { symbol =>
-          (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim)
-        }.reverse.toList
-        .map{x =>
-      coreDeserialize(xml, x._1, x._2 )
-    }
-    flattenEitherValues(reflectedValues) match {
+      reflectedClass.typeSignature.members
+        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
+        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
+        .reverse.toList
+    val ggg = reflectedValues
+        .map{ symbolInfo =>
+          val (symbolName, symbolType): (String, String) = symbolInfo
+          coreDeserialize(xml, symbolName, symbolType )
+        }
+    println()
+    flattenEitherValues(ggg) match {
       case Right(values) =>
         val classMirror: ClassMirror = mirror.reflectClass(reflectedClass)
         val constructor: MethodSymbol = reflectedClass.primaryConstructor.asMethod
@@ -50,12 +86,23 @@ object XmlDeserializer {
     }
   }
 
-  private def coreDeserialize(xml: Elem, symName:String, synType:String)(implicit mirror: Mirror): Either[Throwable, Any] = {
-    val possibleNodeSeq: NodeSeq = xml \ symName
+  private def coreDeserialize[T](xml: Elem, symName:String, synType:String)(implicit mirror: Mirror,  typeTag: TypeTag[T]): Either[Throwable, Any] = {
+    val possibleNode: NodeSeq = xml \ symName
+    val ee = possibleNode.size
     synType match {
-      case "String" => Right(possibleNodeSeq.text)
-      case "Int" => Right(possibleNodeSeq.text.toInt)
-      case _ => deserialize(xml)
+      case "String" => Right(possibleNode.text)
+      case "Int" => Right(possibleNode.text.toInt)
+      case "Float" => Left(new Exception("not imp"))
+      case "Long" => Left(new Exception("not imp"))
+      case "Short" => Left(new Exception("not imp"))
+      case "Double" => Left(new Exception("not imp"))
+      case "Boolean" => Left(new Exception("not imp"))
+      case "List" => Left(new Exception("not imp"))
+      case "Vector" => Left(new Exception("not imp"))
+      case _ =>
+
+        val g = Elem.apply(xml.prefix, xml.label, xml.attributes, xml.scope, true, xml.child :_*)
+        deserialize[T](g)
     }
   }
 

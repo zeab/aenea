@@ -76,7 +76,12 @@ object XmlSerializer {
             Right(s"<$mirrorKey>$cleanedXml</$mirrorKey>")
           case Left(ex) => Left(ex)
         }
-      case _ => serialize(mirrorValue)
+      case _ =>
+        serialize(mirrorValue) match {
+          case Right(xml) =>
+            Right(s"<$mirrorKey>$xml</$mirrorKey>")
+          case Left(ex) => Left(ex)
+        }
     }
 
   private def flattenEitherValuesAndRightString(eitherValues: List[Either[Throwable, String]]): Either[Throwable, String] =
