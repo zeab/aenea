@@ -23,8 +23,9 @@ object XmlDeserializer {
     }
   }
 
-  private def xmlDeserialize(xml: Seq[Node], inputType:String)(implicit mirror: Mirror): Either[Throwable, Any] = {
-    val outputClass: ClassSymbol = mirror.staticClass(inputType)
+  private def xmlDeserialize(xml: Seq[Node])(implicit mirror: Mirror): Either[Throwable, Any] = {
+    val inputType:String = typeTag.tpe.toString
+    //val outputClass: ClassSymbol = mirror.staticClass(inputType)
     //deserialize()
     ???
   }
@@ -70,6 +71,5 @@ object XmlDeserializer {
       eitherValues.collect { case Right(r) => r }
     }
   }
-
 
 }
