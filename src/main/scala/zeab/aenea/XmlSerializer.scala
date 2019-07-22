@@ -6,9 +6,11 @@ import scala.util.{Failure, Success, Try}
 
 object XmlSerializer {
 
-  implicit class XmlSerialize(obj: Any) {
-    implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-    def asXml: Either[Throwable, String] = serialize(obj)
+  implicit class XmlSerialize(val obj: Any) extends AnyVal {
+    def asXml: Either[Throwable, String] = {
+      implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+      serialize(obj)
+    }
   }
 
   private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {

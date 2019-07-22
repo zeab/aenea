@@ -1,5 +1,6 @@
 package zeab.aenea
 
 case class Moose(
-                  name:String
+                  name:String,
+                  age: Int
                 )

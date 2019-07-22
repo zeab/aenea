@@ -3,7 +3,6 @@ package zeab.aenea.serialize
 //Imports
 import org.scalatest.Assertion
 import zeab.aenea.XmlSerializer._
-import zeab.aenea.XmlSerialize._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
 //Scala
 import scala.xml.Elem
