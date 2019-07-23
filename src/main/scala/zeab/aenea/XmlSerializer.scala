@@ -1,5 +1,12 @@
 package zeab.aenea
 
+/**
+  * An automatic case class Xml Serializer
+  *
+  * @author Kevin Kosnik-Downs (Zeab)
+  * @since 2.12
+  */
+
 //Imports
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}

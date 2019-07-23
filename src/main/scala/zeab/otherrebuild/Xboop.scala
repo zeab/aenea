@@ -13,7 +13,6 @@ object Xboop {
   def xmlDeserialize[Output](xml: String)(implicit mirror:Mirror, typeTag: TypeTag[Output]): Output ={
     val inputType:String = typeTag.tpe.toString
     val gg = deserialize(xml, inputType)
-    println()
     gg.asInstanceOf[Output]
   }
 
@@ -87,6 +86,13 @@ object Xboop {
     val headLetter: String = split.headOption.getOrElse("").toLowerCase
     val everythingElse: String = split.tail.mkString
     headLetter + everythingElse
+  }
+
+  //Flattens the list so that only the first left if found is kept but all the rights are unwrapped and stacked
+  def flattenEitherValues(eitherValues: List[Either[Throwable, Any]]): Either[Throwable, List[Any]] = {
+    eitherValues.collectFirst { case Left(f) => f }.toLeft {
+      eitherValues.collect { case Right(r) => r }
+    }
   }
 
 }

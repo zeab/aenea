@@ -1,7 +1,7 @@
 package zeab.aenea
 
 /**
-  * An automatic case class xml deserializer
+  * An automatic case class Xml Deserializer
   *
   * @author Kevin Kosnik-Downs (Zeab)
   * @since 2.12
@@ -15,102 +15,105 @@ import scala.xml.XML.loadString
 
 object XmlDeserializer {
 
-  implicit class XmlDeserialize11(val input: String) extends AnyVal {
-    def fromXml[T](implicit typeTag: TypeTag[T]): Either[Throwable, T] ={
-      implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-      Try(loadString(input)) match {
-        case Success(xml) =>
-          val inputType:String = typeTag.tpe.toString
-          ddd(inputType, xml) match {
-            case Right(obj) => Right(obj.asInstanceOf[T])
-            case Left(ex) => Left(ex)
-          }
-        case Failure(ex) => Left(ex)
-      }
+  implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+
+  def xmlDeserialize[Output](xml: String)(implicit mirror:Mirror, typeTag: TypeTag[Output]): Either[Throwable, Output] ={
+    val inputType:String = typeTag.tpe.toString
+    deserialize(xml, inputType) match {
+      case Right(obj) => Right(obj.asInstanceOf[Output])
+      case Left(ex) => Left(ex)
     }
   }
 
-  def ddd(inputType: String, xml: Seq[Node])(implicit mirror: Mirror):  Either[Throwable, Any] ={
-    val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
-    val reflectedValues =
-      reflectedClass.typeSignature.members
-        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
-        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
-        .reverse.toList
-
-    println()
-    ???
-  }
-
-  def deser(xml: Elem, inputType:String)(implicit mirror: Mirror): Either[Throwable, Any] ={
-    val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
-    val reflectedValues =
-      reflectedClass.typeSignature.members
-        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
-        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
-        .reverse.toList
-    val ggg = reflectedValues
-      .map{ symbolInfo =>
-        val (symbolName, symbolType): (String, String) = symbolInfo
-        //coreDeserialize(xml, symbolName, symbolType )
-        symbolInfo
-      }
-    println()
-    ???
-  }
-
-  private def deserialize[T](xml: Elem)(implicit mirror: Mirror, typeTag: TypeTag[T]): Either[Throwable, T] = {
-    val inputType:String = typeTag.tpe.toString
-    val reflectedClass: ClassSymbol = mirror.staticClass(inputType)
-    val reflectedValues =
-      reflectedClass.typeSignature.members
-        .toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
-        .map { symbol => (symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim) }
-        .reverse.toList
-    val ggg = reflectedValues
-        .map{ symbolInfo =>
-          val (symbolName, symbolType): (String, String) = symbolInfo
-          coreDeserialize(xml, symbolName, symbolType )
+  def deserialize(xml:String, inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+    val outputClass: ClassSymbol = mirror.staticClass(inputType)
+    val outputClassValues =
+      outputClass.typeSignature.members
+        .toList.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
+        .reverse
+        .map { symbol =>
+          val symbolName: String = symbol.name.toString.trim
+          val symbolType: String = symbol.typeSignature.resultType.toString.trim
+          val node: NodeSeq = loadString(xml) \ symbolName
+          coreDeserialize(node, symbolType)
         }
-    println()
-    flattenEitherValues(ggg) match {
+    flattenEitherValues(outputClassValues) match {
       case Right(values) =>
-        val classMirror: ClassMirror = mirror.reflectClass(reflectedClass)
-        val constructor: MethodSymbol = reflectedClass.primaryConstructor.asMethod
+        val classMirror: ClassMirror = mirror.reflectClass(outputClass)
+        val constructor: MethodSymbol = outputClass.primaryConstructor.asMethod
         val constructorMirror: MethodMirror = classMirror.reflectConstructor(constructor)
         Try(constructorMirror.apply(values: _*)) match {
-          case Success(instance) => Right(instance.asInstanceOf[T])
+          case Success(instance) => Right(instance)
           case Failure(ex) => Left(ex)
         }
       case Left(ex) => Left(ex)
     }
   }
 
-  private def coreDeserialize[T](xml: Elem, symName:String, synType:String)(implicit mirror: Mirror,  typeTag: TypeTag[T]): Either[Throwable, Any] = {
-    val possibleNode: NodeSeq = xml \ symName
-    val ee = possibleNode.size
-    synType match {
-      case "String" => Right(possibleNode.text)
-      case "Int" => Right(possibleNode.text.toInt)
-      case "Float" => Left(new Exception("not imp"))
-      case "Long" => Left(new Exception("not imp"))
-      case "Short" => Left(new Exception("not imp"))
-      case "Double" => Left(new Exception("not imp"))
-      case "Boolean" => Left(new Exception("not imp"))
-      case "List" => Left(new Exception("not imp"))
-      case "Vector" => Left(new Exception("not imp"))
+  def coreDeserialize(node:Seq[Node], inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+    inputType match {
+      case "String" => Right(node.text)
+      case "Int" => returnValueFromTry(Try(node.text.toInt))
+      case "Boolean" => returnValueFromTry(Try(node.text.toBoolean))
+      case "Double" => returnValueFromTry(Try(node.text.toDouble))
+      case "Long" => returnValueFromTry(Try(node.text.toLong))
+      case "Short" => returnValueFromTry(Try(node.text.toShort))
+      case n if n.startsWith("Option") =>
+        val innerType: String = inputType.drop(7).dropRight(1)
+        node.text match {
+          case "" => Right(None)
+          case _ =>
+            coreDeserialize(node, innerType) match {
+              case Right(xml) => Right(Some(xml))
+              case Left(ex) => Left(ex)
+            }
+        }
+      case n if n.startsWith("List") =>
+        val innerType: String = inputType.drop(5).dropRight(1)
+        val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
+        val paramValues: List[Either[Throwable, Any]] =
+          (node \ paramName).map{nodeLeaf =>
+            deserialize(nodeLeaf.toString(), innerType)
+          }.toList
+        flattenEitherValues(paramValues) match {
+          case Right(value) => Right(value)
+          case Left(ex) => Left(ex)
+        }
+      case n if n.startsWith("Vector") =>
+        val innerType: String = inputType.drop(7).dropRight(1)
+        val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
+        val paramValues: List[Either[Throwable, Any]] =
+          (node \ paramName).map{nodeLeaf =>
+            deserialize(nodeLeaf.toString(), innerType)
+          }.toList
+        flattenEitherValues(paramValues) match {
+          case Right(value) => Right(value)
+          case Left(ex) => Left(ex)
+        }
       case _ =>
-
-        val g = Elem.apply(xml.prefix, xml.label, xml.attributes, xml.scope, true, xml.child :_*)
-        deserialize[T](g)
+        val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
+        deserialize((node \ paramName).toString(), inputType)
     }
   }
 
+  private def toCamel(input: String, delimiter:Char = '.'): String = {
+    val split: Array[String] = input.split(delimiter)
+    val headLetter: String = split.headOption.getOrElse("").toLowerCase
+    val everythingElse: String = split.tail.mkString
+    headLetter + everythingElse
+  }
+
   //Flattens the list so that only the first left if found is kept but all the rights are unwrapped and stacked
-  def flattenEitherValues(eitherValues: List[Either[Throwable, Any]]): Either[Throwable, List[Any]] = {
+  private def flattenEitherValues(eitherValues: List[Either[Throwable, Any]]): Either[Throwable, List[Any]] = {
     eitherValues.collectFirst { case Left(f) => f }.toLeft {
       eitherValues.collect { case Right(r) => r }
     }
   }
+
+  private def returnValueFromTry(theTry: Try[Any]): Either[Throwable, Any] =
+    theTry match {
+      case Success(value) => Right(value)
+      case Failure(ex) => Left(ex)
+    }
 
 }

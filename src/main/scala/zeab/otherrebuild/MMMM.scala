@@ -1,8 +1,9 @@
 package zeab.otherrebuild
 
 import zeab.aenea._
-import zeab.otherrebuild.Xboop._
+import zeab.aenea.XmlDeserializer._
 import zeab.aenea.XmlSerializer._
+import zeab.obsolte.{Item, Pack, Saber}
 
 import scala.xml.XML.loadString
 object MMMM extends App {
@@ -33,13 +34,13 @@ object MMMM extends App {
 //  val y = xmlDeserialize[Llama](x)
 //  println(y)
 
-  val c = "<saber><status>true</status></saber>"
-  val d = xmlDeserialize[Saber](c)
-  println(d)
+  //val c = "<saber><status>true</status></saber>"
+  //val d = xmlDeserialize[Saber](c)
+  //println(d)
 
-  //val a = "<pack><items><item><name>sword</name></item><item><name>sword</name></item></items></pack>"
-  //val b = xmlDeserialize[Pack](a)
-  //println(b)
+  val a = "<pack><items><item><name>sword</name></item><item><name>sword</name></item></items></pack>"
+  val b = xmlDeserialize[Pack](a)
+  println(b)
 
 
 
