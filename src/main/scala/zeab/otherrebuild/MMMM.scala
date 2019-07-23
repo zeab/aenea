@@ -29,13 +29,13 @@ object MMMM extends App {
     )
   )
 
-  val x = "<llama><name>www</name><friend><moose><name>xx</name><age>7</age></moose></friend></llama>"
-  val y = xmlDeserialize[Llama](x)
-  println(y)
+//  val x = "<llama><name>www</name><friend><moose><name>xx</name><age>7</age></moose></friend></llama>"
+//  val y = xmlDeserialize[Llama](x)
+//  println(y)
 
-  //val c = "<saber><status>true</status></saber>"
-  //val d = xmlDeserialize[Saber](c)
-  //println(d)
+  val c = "<saber><status>true</status></saber>"
+  val d = xmlDeserialize[Saber](c)
+  println(d)
 
   //val a = "<pack><items><item><name>sword</name></item><item><name>sword</name></item></items></pack>"
   //val b = xmlDeserialize[Pack](a)

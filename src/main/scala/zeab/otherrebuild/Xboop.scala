@@ -46,7 +46,10 @@ object Xboop {
       case "Boolean" => node.text.toBoolean
       case n if n.startsWith("Option") =>
         val innerType: String = inputType.drop(7).dropRight(1)
-        Some(coreDeserialize(node, innerType))
+        node.text match {
+          case "" => None
+          case _ => Some(coreDeserialize(node, innerType))
+        }
       case n if n.startsWith("List") =>
         val innerType: String = inputType.drop(5).dropRight(1)
         val ee = node.head.seq.toString()
@@ -87,10 +90,3 @@ object Xboop {
   }
 
 }
-
-
-//symbol.typeSignature.resultType.toString.trim match {
-//  case "String" | "Int" | "Double" =>
-//  symbol.name.toString.trim -> symbol.typeSignature.resultType.toString.trim
-//  case _ => deserialize(xml, symbol.typeSignature.resultType.toString.trim)
-//}
