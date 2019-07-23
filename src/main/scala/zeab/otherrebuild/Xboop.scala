@@ -27,30 +27,7 @@ object Xboop {
           val symbolName: String = symbol.name.toString.trim
           val symbolType: String = symbol.typeSignature.resultType.toString.trim
           val node: NodeSeq = loadString(xml) \ symbolName
-          symbolType match {
-            case "String" => node.text
-            case "Int" => node.text.toInt
-            case "Boolean" => node.text.toBoolean
-            case n if n.startsWith("List") =>
-              val innerType: String = symbolType.dropRight(1).drop(5)
-              val ee = node.head.seq.toString()
-              val strippedSymbolName: String =
-                symbolType.split('.').lastOption.getOrElse("").replace("]", "")
-              val paramName: String = toCamel(strippedSymbolName)
-              val errr = node \ paramName
-              val kk =
-              errr.map{ss =>
-                deserialize(ss.toString(), innerType)
-              }.toList
-              kk
-            case n if n.startsWith("Vector") =>
-              ""
-            case _ =>
-              val strippedSymbolName: String =
-                symbolType.split('.').lastOption.getOrElse("").replace("]", "")
-              val paramName: String = toCamel(strippedSymbolName)
-              deserialize((node \ paramName).toString(), symbolType)
-          }
+          coreDeserialize(node, symbolType)
         }
     val classMirror: ClassMirror = mirror.reflectClass(outputClass)
     val constructor: MethodSymbol = outputClass.primaryConstructor.asMethod
@@ -60,6 +37,46 @@ object Xboop {
 //      case Failure(ex) => Left(ex)
 //    }
     constructorMirror.apply(outputClassValues: _*)
+  }
+
+  def coreDeserialize(node:Seq[Node], inputType:String)(implicit mirror:Mirror): Any ={
+    inputType match {
+      case "String" => node.text
+      case "Int" => node.text.toInt
+      case "Boolean" => node.text.toBoolean
+      case n if n.startsWith("Option") =>
+        val innerType: String = inputType.drop(7).dropRight(1)
+        Some(coreDeserialize(node, innerType))
+      case n if n.startsWith("List") =>
+        val innerType: String = inputType.drop(5).dropRight(1)
+        val ee = node.head.seq.toString()
+        val strippedSymbolName: String =
+          inputType.split('.').lastOption.getOrElse("").replace("]", "")
+        val paramName: String = toCamel(strippedSymbolName)
+        val errr = node \ paramName
+        val kk =
+          errr.map{ss =>
+            deserialize(ss.toString(), innerType)
+          }.toList
+        kk
+      case n if n.startsWith("Vector") =>
+        val innerType: String = inputType.drop(7).dropRight(1)
+        val ee = node.head.seq.toString()
+        val strippedSymbolName: String =
+          inputType.split('.').lastOption.getOrElse("").replace("]", "")
+        val paramName: String = toCamel(strippedSymbolName)
+        val errr = node \ paramName
+        val kk =
+          errr.map{ss =>
+            deserialize(ss.toString(), innerType)
+          }.toVector
+        kk
+      case _ =>
+        val strippedSymbolName: String =
+          inputType.split('.').lastOption.getOrElse("").replace("]", "")
+        val paramName: String = toCamel(strippedSymbolName)
+        deserialize((node \ paramName).toString(), inputType)
+    }
   }
 
   def toCamel(input: String, delimiter:Char = '.'): String = {
