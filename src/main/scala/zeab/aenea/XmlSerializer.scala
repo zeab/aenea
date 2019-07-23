@@ -73,6 +73,8 @@ object XmlSerializer {
           case Left(ex) => Left(ex)
         }
       case _ =>
+        //TODO ... maybe the right decision is that IF the parameters and header are the same value... only print one...
+        //... this is a possible option here... but i really dont know if its the right one of if i like it...
         serialize(mirrorValue) match {
           case Right(xml) => Right(s"<$mirrorKey>$xml</$mirrorKey>")
           case Left(ex) => Left(ex)
