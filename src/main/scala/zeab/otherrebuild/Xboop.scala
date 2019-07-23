@@ -32,6 +32,18 @@ object Xboop {
             case "Int" => node.text.toInt
             case "Boolean" => node.text.toBoolean
             case n if n.startsWith("List") =>
+              val innerType: String = symbolType.dropRight(1).drop(5)
+              val ee = node.head.seq.toString()
+              val strippedSymbolName: String =
+                symbolType.split('.').lastOption.getOrElse("").replace("]", "")
+              val paramName: String = toCamel(strippedSymbolName)
+              val errr = node \ paramName
+              val kk =
+              errr.map{ss =>
+                deserialize(ss.toString(), innerType)
+              }.toList
+              kk
+            case n if n.startsWith("Vector") =>
               ""
             case _ =>
               val strippedSymbolName: String =
