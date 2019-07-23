@@ -6,7 +6,6 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, Node, NodeSeq}
 import scala.xml.XML.loadString
 
-
 object Xboop {
 
   implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
@@ -27,19 +26,18 @@ object Xboop {
         .map { symbol =>
           val symbolName: String = symbol.name.toString.trim
           val symbolType: String = symbol.typeSignature.resultType.toString.trim
-          val hh = symbolType.split('.').lastOption.getOrElse("")
-          val symbolTypeShort: String =
-            if (hh == "") ""
-            else hh.seq(0).toLower + hh.drop(1)
-          val eee = loadString(xml).toString()
-          val x = loadString(xml) \ symbol.name.toString.trim
-          val rr = x.toString()
-          symbol.typeSignature.resultType.toString.trim match {
-            case "String" => x.text
-            case "Int" => x.text.toInt
+          val node: NodeSeq = loadString(xml) \ symbolName
+          symbolType match {
+            case "String" => node.text
+            case "Int" => node.text.toInt
+            case "Boolean" => node.text.toBoolean
+            case n if n.startsWith("List") =>
+              ""
             case _ =>
-              val ggg = (x \ symbolTypeShort).toString()
-              deserialize(ggg.toString, symbol.typeSignature.resultType.toString.trim)
+              val strippedSymbolName: String =
+                symbolType.split('.').lastOption.getOrElse("").replace("]", "")
+              val paramName: String = toCamel(strippedSymbolName)
+              deserialize((node \ paramName).toString(), symbolType)
           }
         }
     val classMirror: ClassMirror = mirror.reflectClass(outputClass)
@@ -51,6 +49,14 @@ object Xboop {
 //    }
     constructorMirror.apply(outputClassValues: _*)
   }
+
+  def toCamel(input: String, delimiter:Char = '.'): String = {
+    val split: Array[String] = input.split(delimiter)
+    val headLetter: String = split.headOption.getOrElse("").toLowerCase
+    val everythingElse: String = split.tail.mkString
+    headLetter + everythingElse
+  }
+
 }
 
 
