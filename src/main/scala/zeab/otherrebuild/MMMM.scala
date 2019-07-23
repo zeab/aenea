@@ -39,7 +39,7 @@ object MMMM extends App {
   //println(d)
 
   val a = "<pack><items><item><name>sword</name></item><item><name>sword</name></item></items></pack>"
-  val b = xmlDeserialize[Pack](a)
+  val b = a.fromXml[Pack]
   println(b)
 
 

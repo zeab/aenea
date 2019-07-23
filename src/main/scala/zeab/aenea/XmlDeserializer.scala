@@ -15,19 +15,24 @@ import scala.xml.XML.loadString
 
 object XmlDeserializer {
 
-  implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+  implicit class XmlDeserialize(val xml: String) extends AnyVal {
+    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Any] = {
+      implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+      deserialize[Output](xml)
+    }
+  }
 
-  def xmlDeserialize[Output](xml: String)(implicit mirror:Mirror, typeTag: TypeTag[Output]): Either[Throwable, Output] ={
+  private def deserialize[Output](xml: String)(implicit mirror:Mirror, typeTag: TypeTag[Output]): Either[Throwable, Output] ={
     val inputType:String = typeTag.tpe.toString
-    deserialize(xml, inputType) match {
+    coreDeserialize(xml, inputType) match {
       case Right(obj) => Right(obj.asInstanceOf[Output])
       case Left(ex) => Left(ex)
     }
   }
 
-  def deserialize(xml:String, inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+  private def coreDeserialize(xml:String, inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
     val outputClass: ClassSymbol = mirror.staticClass(inputType)
-    val outputClassValues =
+    val outputClassValues: List[Either[Throwable, Any]] =
       outputClass.typeSignature.members
         .toList.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol }
         .reverse
@@ -35,7 +40,7 @@ object XmlDeserializer {
           val symbolName: String = symbol.name.toString.trim
           val symbolType: String = symbol.typeSignature.resultType.toString.trim
           val node: NodeSeq = loadString(xml) \ symbolName
-          coreDeserialize(node, symbolType)
+          convertToValues(node, symbolType)
         }
     flattenEitherValues(outputClassValues) match {
       case Right(values) =>
@@ -50,7 +55,7 @@ object XmlDeserializer {
     }
   }
 
-  def coreDeserialize(node:Seq[Node], inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+  private def convertToValues(node:Seq[Node], inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
     inputType match {
       case "String" => Right(node.text)
       case "Int" => returnValueFromTry(Try(node.text.toInt))
@@ -63,7 +68,7 @@ object XmlDeserializer {
         node.text match {
           case "" => Right(None)
           case _ =>
-            coreDeserialize(node, innerType) match {
+            convertToValues(node, innerType) match {
               case Right(xml) => Right(Some(xml))
               case Left(ex) => Left(ex)
             }
@@ -73,7 +78,7 @@ object XmlDeserializer {
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
         val paramValues: List[Either[Throwable, Any]] =
           (node \ paramName).map{nodeLeaf =>
-            deserialize(nodeLeaf.toString(), innerType)
+            coreDeserialize(nodeLeaf.toString(), innerType)
           }.toList
         flattenEitherValues(paramValues) match {
           case Right(value) => Right(value)
@@ -84,7 +89,7 @@ object XmlDeserializer {
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
         val paramValues: List[Either[Throwable, Any]] =
           (node \ paramName).map{nodeLeaf =>
-            deserialize(nodeLeaf.toString(), innerType)
+            coreDeserialize(nodeLeaf.toString(), innerType)
           }.toList
         flattenEitherValues(paramValues) match {
           case Right(value) => Right(value)
@@ -92,7 +97,7 @@ object XmlDeserializer {
         }
       case _ =>
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
-        deserialize((node \ paramName).toString(), inputType)
+        coreDeserialize((node \ paramName).toString(), inputType)
     }
   }
 
@@ -103,7 +108,6 @@ object XmlDeserializer {
     headLetter + everythingElse
   }
 
-  //Flattens the list so that only the first left if found is kept but all the rights are unwrapped and stacked
   private def flattenEitherValues(eitherValues: List[Either[Throwable, Any]]): Either[Throwable, List[Any]] = {
     eitherValues.collectFirst { case Left(f) => f }.toLeft {
       eitherValues.collect { case Right(r) => r }
