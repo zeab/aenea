@@ -1,5 +1,5 @@
 ### Aenea
- An automatic xml case class serializer and deserializer using reflection.
+ An automatic xml case class serializer and deserializer using reflection which so far has not failed me running this multithreaded with Akka.
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.zeab/aenea_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.zeab/aenea_2.12)
 [![Build Status](https://travis-ci.org/zeab/aenea.svg?branch=master)](https://travis-ci.org/zeab/aenea)
@@ -7,17 +7,17 @@
 
 Xml Serialize:
 ```scala
-import zeab.aenea.XmlSerialize._
+import zeab.aenea.XmlSerializer._
 case class MyDoubleClass(myDouble:Double)
 val obj: MyDoubleClass = MyDoubleClass(1.1)
-val serializedXml: Either[Throwable, String] = xmlSerialize(obj)
+val serializedXml: Either[Throwable, String] = obj.asXml
 ```
 
 Xml Deserialize:
 ```scala
-import zeab.aenea.XmlDeserialize._
+import zeab.aenea.XmlDeserializer._
 case class MyBooleanClass(myBoolean:Boolean)
 val expectedType: String = "MyBooleanClass"
 val xml: String = "<myBooleanClass><myBoolean>false</myBoolean></myBooleanClass>"
-val obj = xmlDeserialize[MyBooleanClass](xml)
+val obj = xml.fromXml[MyBooleanClass]
 ```
