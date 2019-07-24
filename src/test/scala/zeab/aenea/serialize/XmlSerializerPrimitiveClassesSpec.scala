@@ -1,14 +1,10 @@
 package zeab.aenea.serialize
 
 //Imports
-import org.scalatest.Assertion
 import zeab.aenea.XmlSerializer._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
-//Scala
-import scala.xml.Elem
-import scala.xml.XML.loadString
 //ScalaTest
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, Assertion}
 
 class XmlSerializerPrimitiveClassesSpec extends FunSuite {
 
