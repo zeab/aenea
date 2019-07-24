@@ -61,7 +61,9 @@ object XmlDeserializer {
   }
 
   private def convertToValues(node: Seq[Node], inputType: String)(implicit mirror: Mirror): Either[Throwable, Any] = {
+    //TODO Add more unsupported types and test them...
     inputType match {
+      case "Unit"  | "Null" => Left(new Exception(s"unsupported type: $inputType"))
       case "String" => Right(node.text)
       case "Int" => returnValueFromTry(Try(node.text.toInt))
       case "Boolean" => returnValueFromTry(Try(node.text.toBoolean))
