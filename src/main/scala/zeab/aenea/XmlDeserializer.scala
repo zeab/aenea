@@ -10,27 +10,31 @@ package zeab.aenea
 //Imports
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, Node, NodeSeq}
 import scala.xml.XML.loadString
+import scala.xml.{Node, NodeSeq}
 
 object XmlDeserializer {
 
   implicit class XmlDeserialize(val xml: String) extends AnyVal {
-    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Any] = {
-      implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-      deserialize[Output](xml)
+    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Output] = {
+      xml match {
+        case "" => Left(new Exception("xml input cannot be blank"))
+        case _ =>
+          implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+          deserialize[Output](xml)
+      }
     }
   }
 
-  private def deserialize[Output](xml: String)(implicit mirror:Mirror, typeTag: TypeTag[Output]): Either[Throwable, Output] ={
-    val inputType:String = typeTag.tpe.toString
+  private def deserialize[Output](xml: String)(implicit mirror: Mirror, typeTag: TypeTag[Output]): Either[Throwable, Output] = {
+    val inputType: String = typeTag.tpe.toString
     coreDeserialize(xml, inputType) match {
       case Right(obj) => Right(obj.asInstanceOf[Output])
       case Left(ex) => Left(ex)
     }
   }
 
-  private def coreDeserialize(xml:String, inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+  private def coreDeserialize(xml: String, inputType: String)(implicit mirror: Mirror): Either[Throwable, Any] = {
     val outputClass: ClassSymbol = mirror.staticClass(inputType)
     val outputClassValues: List[Either[Throwable, Any]] =
       outputClass.typeSignature.members
@@ -40,7 +44,8 @@ object XmlDeserializer {
           val symbolName: String = symbol.name.toString.trim
           val symbolType: String = symbol.typeSignature.resultType.toString.trim
           val node: NodeSeq = loadString(xml) \ symbolName
-          convertToValues(node, symbolType)
+          if (node.isEmpty) Left(new Exception(s"node should not be blank when looking for symbolName: $symbolName"))
+          else convertToValues(node, symbolType)
         }
     flattenEitherValues(outputClassValues) match {
       case Right(values) =>
@@ -55,12 +60,13 @@ object XmlDeserializer {
     }
   }
 
-  private def convertToValues(node:Seq[Node], inputType:String)(implicit mirror:Mirror): Either[Throwable, Any] ={
+  private def convertToValues(node: Seq[Node], inputType: String)(implicit mirror: Mirror): Either[Throwable, Any] = {
     inputType match {
       case "String" => Right(node.text)
       case "Int" => returnValueFromTry(Try(node.text.toInt))
       case "Boolean" => returnValueFromTry(Try(node.text.toBoolean))
       case "Double" => returnValueFromTry(Try(node.text.toDouble))
+      case "Float" => returnValueFromTry(Try(node.text.toFloat))
       case "Long" => returnValueFromTry(Try(node.text.toLong))
       case "Short" => returnValueFromTry(Try(node.text.toShort))
       case n if n.startsWith("Option") =>
@@ -77,9 +83,7 @@ object XmlDeserializer {
         val innerType: String = inputType.drop(5).dropRight(1)
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
         val paramValues: List[Either[Throwable, Any]] =
-          (node \ paramName).map{nodeLeaf =>
-            coreDeserialize(nodeLeaf.toString(), innerType)
-          }.toList
+          (node \ paramName).map { nodeLeaf => coreDeserialize(nodeLeaf.toString, innerType) }.toList
         flattenEitherValues(paramValues) match {
           case Right(value) => Right(value)
           case Left(ex) => Left(ex)
@@ -88,22 +92,25 @@ object XmlDeserializer {
         val innerType: String = inputType.drop(7).dropRight(1)
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
         val paramValues: List[Either[Throwable, Any]] =
-          (node \ paramName).map{nodeLeaf =>
-            coreDeserialize(nodeLeaf.toString(), innerType)
-          }.toList
+          (node \ paramName).map { nodeLeaf => coreDeserialize(nodeLeaf.toString, innerType) }.toList
         flattenEitherValues(paramValues) match {
           case Right(value) => Right(value)
           case Left(ex) => Left(ex)
         }
       case _ =>
         val paramName: String = toCamel(inputType.split('.').lastOption.getOrElse("").replace("]", ""))
-        coreDeserialize((node \ paramName).toString(), inputType)
+        val xml: String =
+          (node \ paramName).toString match {
+            case "" => node.toString
+            case xml: String => xml
+          }
+        coreDeserialize(xml, inputType)
     }
   }
 
-  private def toCamel(input: String, delimiter:Char = '.'): String = {
-    val split: Array[String] = input.split(delimiter)
-    val headLetter: String = split.headOption.getOrElse("").toLowerCase
+  private def toCamel(input: String): String = {
+    val split: Array[Char] = input.toArray
+    val headLetter: String = split.headOption.getOrElse(' ').toLower.toString
     val everythingElse: String = split.tail.mkString
     headLetter + everythingElse
   }
