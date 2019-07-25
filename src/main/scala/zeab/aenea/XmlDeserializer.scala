@@ -8,6 +8,7 @@ package zeab.aenea
   */
 
 //Imports
+import scala.annotation.tailrec
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import scala.xml.XML.loadString
@@ -60,8 +61,8 @@ object XmlDeserializer {
     }
   }
 
-  private def convertToValues(node: Seq[Node], inputType: String)(implicit mirror: Mirror): Either[Throwable, Any] = {
-    //TODO Add more unsupported types and test them...
+  //TODO Add more unsupported types and test them...
+  private def convertToValues(node: Seq[Node], inputType: String)(implicit mirror: Mirror): Either[Throwable, Any] =
     inputType match {
       case "Unit"  | "Null" => Left(new Exception(s"unsupported type: $inputType"))
       case "String" => Right(node.text)
@@ -108,7 +109,6 @@ object XmlDeserializer {
           }
         coreDeserialize(xml, inputType)
     }
-  }
 
   private def toCamel(input: String): String = {
     val split: Array[Char] = input.toArray
