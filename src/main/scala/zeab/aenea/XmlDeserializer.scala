@@ -8,7 +8,6 @@ package zeab.aenea
   */
 
 //Imports
-import scala.annotation.tailrec
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import scala.xml.XML.loadString
