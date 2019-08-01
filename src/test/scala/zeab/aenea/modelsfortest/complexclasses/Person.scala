@@ -8,5 +8,5 @@ case class Person(
                    soulStone: Option[Boolean],
                    mount: Option[Horse],
                    backpack: List[Item],
-                   previousDestinations: Vector[String]
+                   previousDestinations: List[String]
                  )
