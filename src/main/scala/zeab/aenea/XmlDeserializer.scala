@@ -8,6 +8,7 @@ package zeab.aenea
  */
 
 //Imports
+
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import scala.xml.XML.loadString
@@ -25,10 +26,7 @@ object XmlDeserializer {
               typeTag.tpe.toString match {
                 case "String" => Right(xml.asInstanceOf[Output])
                 case "BigDecimal" | "BigInt" | "Int" | "Double" | "Float" | "Double" | "Short" | "Long" | "Right" | "Left" => Left(new Exception("Must supply a case class to deserializer"))
-                case x if x.startsWith("Map") => Left(new Exception("Must supply a case class to deserializer"))
-                case x if x.startsWith("Vector") => Left(new Exception("Must supply a case class to deserializer"))
-                case x if x.startsWith("Set") => Left(new Exception("Must supply a case class to deserializer"))
-                case x if x.startsWith("List") => Left(new Exception("Must supply a case class to deserializer"))
+                case x if x.startsWith("Map") | x.startsWith("Vector") | x.startsWith("Set") | x.startsWith("List") => Left(new Exception("Must supply a case class to deserializer"))
                 case outputType: String =>
                   implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
                   deserialize(actualXml.seq, outputType) match {

@@ -8,6 +8,7 @@ package zeab.aenea
  */
 
 //Imports
+
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
@@ -20,8 +21,7 @@ object XmlSerializer {
       (objSimpleType match {
         case "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
           Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
-        case x if x.startsWith("Map") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
-        case x if x.startsWith("Set") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
+        case x if x.startsWith("Map") | x.startsWith("Set") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
         case _ => serialize(obj)
       }) match {
         case Right(innerXml) =>
@@ -76,7 +76,7 @@ object XmlSerializer {
   private def innerSerialize(key: String, innerValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
     val innerValueType: String = getObjSimpleTypeName(innerValue)
     innerValueType match {
-      case "Seq" |"Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
+      case "Seq" | "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
         coreSerialize(key, innerValue, innerValueType)
       case _ => serialize(innerValue) match {
         case Right(xml) =>
