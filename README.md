@@ -15,7 +15,6 @@ val serializedXml: Either[Throwable, String] = obj.asXml
 
 Xml Deserialize:
 ```scala
-import zeab.aenea.XmlDeserializer._
 case class MyBooleanClass(myBoolean:Boolean)
 val expectedType: String = "MyBooleanClass"
 val xml: String = "<myBooleanClass><myBoolean>false</myBoolean></myBooleanClass>"

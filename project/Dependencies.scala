@@ -7,7 +7,7 @@ object Dependencies {
   val V = new {
     val reflect                     = "2.12.8"
     val scalaTest                   = "3.0.5"
-    val scalaXML                    = "1.0.6"
+    val scalaXML                    = "1.2.0"
   }
 
   //List of Dependencies

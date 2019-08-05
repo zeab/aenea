@@ -92,6 +92,7 @@ class XmlSerializerPrimitiveClassesSpec extends FunSuite {
     }
   }
 
+  //TODO Decide if that is actually the behavior we want... since by it self it doesn't matter but circe i know does not do any
   test("Any Serialize") {
     val obj: MyAnyClass = MyAnyClass("llama")
     val serializedXml: Either[Throwable, String] = obj.asXml

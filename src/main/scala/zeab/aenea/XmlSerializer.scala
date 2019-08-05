@@ -1,13 +1,14 @@
 package zeab.aenea
 
 /**
-  * An automatic case class Xml Serializer
-  *
-  * @author Kevin Kosnik-Downs (Zeab)
-  * @since 2.12
-  */
+ * An automatic case class to xml serializer
+ *
+ * @author Kevin Kosnik-Downs (Zeab)
+ * @since 2.12
+ */
 
 //Imports
+
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
@@ -16,93 +17,92 @@ object XmlSerializer {
   implicit class XmlSerialize(val obj: Any) extends AnyVal {
     def asXml: Either[Throwable, String] = {
       implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-      serialize(obj)
+      val objSimpleType: String = getObjSimpleTypeName(obj)
+      (objSimpleType match {
+        case "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
+          Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
+        case x if x.startsWith("Map") | x.startsWith("Set") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
+        case _ => serialize(obj)
+      }) match {
+        case Right(innerXml) =>
+          val camelObjName: String = toCamel(objSimpleType)
+          innerXml match {
+            case "" => Right(s"<$camelObjName/>")
+            case xml: String => Right(s"<$camelObjName>$xml</$camelObjName>")
+          }
+        case Left(ex) => Left(ex)
+      }
     }
   }
 
   private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
-    val objName: String = getObjName(obj)
-    objName match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" =>
-        Left(new Exception("cannot serialize on a primitive"))
-      case "Vector" | "$colon$colon" => Left(new Exception("not implemented"))
-      case x if x.contains("Map") => Left(new Exception("not implemented"))
+    val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
+    val possibleXml: Seq[Either[Throwable, String]] =
+      objInstanceMirror.symbol.typeSignature.members.toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => objInstanceMirror.reflectField(termSymbol) }
+        .map { fieldMirror: FieldMirror =>
+          val mirrorKey: String = fieldMirror.symbol.name.toString.trim
+          val mirrorValue: Any = fieldMirror.get
+          val mirrorValueType = getObjSimpleTypeName(mirrorValue)
+          coreSerialize(mirrorKey, mirrorValue, mirrorValueType)
+        }.reverse
+    compressEither(possibleXml)
+  }
+
+  private def coreSerialize(key: String, value: Any, valueType: String)(implicit mirror: Mirror): Either[Throwable, String] = {
+    valueType match {
+      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
+        if (value == "") Right(s"<$key/>")
+        else Right(s"<$key>$value</$key>")
+      case "Some" | "None$" =>
+        value.asInstanceOf[Option[Any]] match {
+          case Some(innerValue) => innerSerialize(key, innerValue)
+          case None => Right(s"<$key/>")
+        }
+      case "$colon$colon" | "Vector" | "Seq" =>
+        val possibleXml: Seq[Either[Throwable, String]] =
+          value.asInstanceOf[Seq[Any]].map { innerValue: Any => innerSerialize(key, innerValue) }
+        if (possibleXml.isEmpty) Right(s"<$key/>")
+        else compressEither(possibleXml)
       case _ =>
-        val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
-        val possibleXml: List[Either[Throwable, String]] =
-          objInstanceMirror.symbol.typeSignature.members.toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => objInstanceMirror.reflectField(termSymbol) }
-            .map { fieldMirror =>
-              val mirrorKey: String = fieldMirror.symbol.name.toString.trim
-              val mirrorValue: Any = fieldMirror.get
-              coreSerialize(mirrorKey, mirrorValue)
-            }.reverse.toList
-        flattenEitherValuesAndRightString(possibleXml) match {
+        serialize(value) match {
           case Right(xml) =>
-            val camelObjName: String = objName.seq(0).toLower + objName.drop(1)
-            Right(s"<$camelObjName>$xml</$camelObjName>")
+            if (xml == "") Right(s"<$key/>")
+            else Right(s"<$key>$xml</$key>")
           case Left(ex) => Left(ex)
         }
     }
   }
 
-  private def coreSerialize(mirrorKey: String, mirrorValue: Any)(implicit mirror: Mirror): Either[Throwable, String] =
-    getObjName(mirrorValue) match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" =>
-        mirrorValue.toString match {
-          case "" => Right(s"<$mirrorKey/>")
-          case _ => Right(s"<$mirrorKey>$mirrorValue</$mirrorKey>")
-        }
-      case "Some" | "None$" =>
-        mirrorValue.asInstanceOf[Option[Any]] match {
-          case Some(optionValue) => coreSerialize(mirrorKey, optionValue)
-          case None => Right(s"<$mirrorKey/>")
-        }
-      case "Nil$" => Right(s"<$mirrorKey/>")
-      case "Right" | "Left" => Left(new Exception("unsupported Left|Right"))
-      case "Vector" =>
-        val params: List[Either[Throwable, String]] =
-          mirrorValue.asInstanceOf[Vector[Any]].map { param => serializeDecider(param, mirrorKey) }.toList
-        flattenEitherValuesAndRightString(params) match {
-          case Right(xml) =>
-            xml match {
-              case "" => Right(s"<$mirrorKey/>")
-              case _ => Right(xml)
-            }
-          case Left(ex) => Left(ex)
-        }
-      case "$colon$colon" =>
-        val params: List[Either[Throwable, String]] =
-          mirrorValue.asInstanceOf[List[Any]].map { param => serializeDecider(param, mirrorKey) }
-        flattenEitherValuesAndRightString(params) match {
-          case Right(rawXml) =>
-            val cleanedXml: String = rawXml.replace(s"<$mirrorKey/>", "")
-            Right(s"<$mirrorKey>$cleanedXml</$mirrorKey>")
-          case Left(ex) => Left(ex)
-        }
-      case _ =>
-        //TODO ... maybe the right decision is that IF the parameters and header are the same value... only print one...
-        //... this is a possible option here... but i really dont know if its the right one of if i like it...
-        serialize(mirrorValue) match {
-          case Right(xml) => Right(s"<$mirrorKey>$xml</$mirrorKey>")
-          case Left(ex) => Left(ex)
-        }
+  private def innerSerialize(key: String, innerValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
+    val innerValueType: String = getObjSimpleTypeName(innerValue)
+    innerValueType match {
+      case "Seq" | "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
+        coreSerialize(key, innerValue, innerValueType)
+      case _ => serialize(innerValue) match {
+        case Right(xml) =>
+          if (xml == "") Right(s"<$key/>")
+          else Right(s"<$key>$xml</$key>")
+        case Left(ex) => Left(ex)
+      }
     }
+  }
 
-  private def flattenEitherValuesAndRightString(eitherValues: List[Either[Throwable, String]]): Either[Throwable, String] =
-    eitherValues.collectFirst { case Left(f) => f }.toLeft {
-      eitherValues.collect { case Right(r) => r }.mkString
-    }
-
-  private def getObjName(obj: Any): String =
+  private def getObjSimpleTypeName(obj: Any): String =
     Try(obj.getClass.getSimpleName) match {
       case Success(name) => name
       case Failure(_) => "Null"
     }
 
-  private def serializeDecider(param: Any, mirrorKey: String)(implicit mirror: Mirror): Either[Throwable, String] =
-    getObjName(param) match {
-      case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" => coreSerialize(mirrorKey, param)
-      case _ => serialize(param)
+  private def compressEither(eitherValues: Seq[Either[Throwable, String]]): Either[Throwable, String] =
+    eitherValues.collectFirst { case Left(l) => l }.toLeft {
+      eitherValues.collect { case Right(r) => r }.mkString
     }
+
+  private def toCamel(input: String): String = {
+    val split: Array[Char] = input.toArray
+    val headLetter: String = split.headOption.getOrElse(' ').toLower.toString
+    val everythingElse: String = split.tail.mkString
+    headLetter + everythingElse
+  }
 
 }
