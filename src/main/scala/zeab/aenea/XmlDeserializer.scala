@@ -8,7 +8,6 @@ package zeab.aenea
  */
 
 //Imports
-
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import scala.xml.XML.loadString
@@ -16,29 +15,39 @@ import scala.xml.{Node, NodeSeq}
 
 object XmlDeserializer {
 
-  implicit class XmlDeserialize(val xml: String) extends AnyVal {
-    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Output] = {
-      Try(loadString(xml)) match {
-        case Success(actualXml) =>
-          xml match {
-            case "" => Left(new Exception("xml input cannot be blank"))
-            case _ =>
-              typeTag.tpe.toString match {
-                case "String" => Right(xml.asInstanceOf[Output])
-                case "BigDecimal" | "BigInt" | "Int" | "Double" | "Float" | "Double" | "Short" | "Long" | "Right" | "Left" => Left(new Exception("Must supply a case class to deserializer"))
-                case x if x.startsWith("Map") | x.startsWith("Vector") | x.startsWith("Set") | x.startsWith("List") => Left(new Exception("Must supply a case class to deserializer"))
-                case outputType: String =>
-                  implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
-                  deserialize(actualXml.seq, outputType) match {
-                    case Right(output) => Right(output.asInstanceOf[Output])
-                    case Left(ex) => Left(ex)
-                  }
-              }
-          }
-        case Failure(ex) => Left(ex)
+  implicit class XmlDeserializeFromEither(val possibleXml: Either[Throwable, String]) extends AnyVal {
+    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
+      possibleXml match {
+        case Right(xml) => handleDeserialize[Output](xml)
+        case Left(ex) => Left(ex)
       }
-    }
   }
+
+  implicit class XmlDeserializeFromString(val xml: String) extends AnyVal {
+    def fromXml[Output](implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
+      handleDeserialize[Output](xml)
+  }
+
+  private def handleDeserialize[Output](xml: String)(implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
+    Try(loadString(xml)) match {
+      case Success(actualXml) =>
+        xml match {
+          case "" => Left(new Exception("xml input cannot be blank"))
+          case _ =>
+            typeTag.tpe.toString match {
+              case "String" => Right(xml.asInstanceOf[Output])
+              case "BigDecimal" | "BigInt" | "Int" | "Double" | "Float" | "Double" | "Short" | "Long" | "Right" | "Left" => Left(new Exception("Must supply a case class to deserializer"))
+              case x if x.startsWith("Map") | x.startsWith("Vector") | x.startsWith("Set") | x.startsWith("List") => Left(new Exception("Must supply a case class to deserializer"))
+              case outputType: String =>
+                implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+                deserialize(actualXml.seq, outputType) match {
+                  case Right(output) => Right(output.asInstanceOf[Output])
+                  case Left(ex) => Left(ex)
+                }
+            }
+        }
+      case Failure(ex) => Left(ex)
+    }
 
   private def deserialize(xml: Seq[Node], outputType: String)(implicit mirror: Mirror): Either[Throwable, Any] = {
     val outputClass: ClassSymbol = mirror.staticClass(outputType)

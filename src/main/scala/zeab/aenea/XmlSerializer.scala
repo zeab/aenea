@@ -50,6 +50,7 @@ object XmlSerializer {
 
   private def coreSerialize(key: String, value: Any, valueType: String)(implicit mirror: Mirror): Either[Throwable, String] = {
     valueType match {
+      case "Null" => Right("")
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
         if (value == "") Right(s"<$key/>")
         else Right(s"<$key>$value</$key>")
