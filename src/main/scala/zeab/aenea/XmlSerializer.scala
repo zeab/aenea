@@ -14,14 +14,15 @@ import scala.util.{Failure, Success, Try}
 object XmlSerializer {
 
   implicit class XmlSerialize(val obj: Any) extends AnyVal {
-    def asXml: Either[Throwable, String] = {
+    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = {
       implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
       val objSimpleType: String = getObjSimpleTypeName(obj)
       (objSimpleType match {
-        case "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
+        case "String" => Right(obj.toString)
+        case "Vector" | "$colon$colon" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
           Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
-        case x if x.startsWith("Map") | x.startsWith("Set") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
-        case _ => serialize(obj)
+        case tag if tag.startsWith("Map") | tag.startsWith("Set") | tag.startsWith("Seq") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
+        case _ => serialize(obj, options)
       }) match {
         case Right(innerXml) =>
           val camelObjName: String = toCamel(objSimpleType)
@@ -34,37 +35,46 @@ object XmlSerializer {
     }
   }
 
-  private def serialize(obj: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
+  private def serialize(obj: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
     val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
     val possibleXml: Seq[Either[Throwable, String]] =
       objInstanceMirror.symbol.typeSignature.members.toStream.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => objInstanceMirror.reflectField(termSymbol) }
         .map { fieldMirror: FieldMirror =>
           val mirrorKey: String = fieldMirror.symbol.name.toString.trim
           val mirrorValue: Any = fieldMirror.get
-          val mirrorValueType = getObjSimpleTypeName(mirrorValue)
-          coreSerialize(mirrorKey, mirrorValue, mirrorValueType)
+          coreSerialize(mirrorKey, mirrorValue, getObjSimpleTypeName(mirrorValue), options)
         }.reverse
     compressEither(possibleXml)
   }
 
-  private def coreSerialize(key: String, value: Any, valueType: String)(implicit mirror: Mirror): Either[Throwable, String] = {
+  private def coreSerialize(key: String, value: Any, valueType: String, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
     valueType match {
-      case "Null" => Right("")
+      case "Null" =>
+        if (options.find(_._1.toLowerCase == "isnullaccepted").map(_._2).getOrElse("false").toBoolean) Right("")
+        else Left(new Exception("Unable to serialize a null"))
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
         if (value == "") Right(s"<$key/>")
         else Right(s"<$key>$value</$key>")
       case "Some" | "None$" =>
-        value.asInstanceOf[Option[Any]] match {
-          case Some(innerValue) => innerSerialize(key, innerValue)
-          case None => Right(s"<$key/>")
+        Try(value.asInstanceOf[Option[Any]]) match {
+          case Success(casedValue) =>
+            casedValue match {
+              case Some(innerValue) => innerSerialize(key, innerValue, options)
+              case None => Right(s"<$key/>")
+            }
+          case Failure(ex) => Left(ex)
         }
       case "$colon$colon" | "Vector" | "Seq" =>
-        val possibleXml: Seq[Either[Throwable, String]] =
-          value.asInstanceOf[Seq[Any]].map { innerValue: Any => innerSerialize(key, innerValue) }
-        if (possibleXml.isEmpty) Right(s"<$key/>")
-        else compressEither(possibleXml)
+        Try(value.asInstanceOf[Seq[Any]]) match {
+          case Success(casedValue) =>
+            val possibleXml: Seq[Either[Throwable, String]] =
+              casedValue.map { innerValue: Any => innerSerialize(key, innerValue, options) }
+            if (possibleXml.isEmpty) Right(s"<$key/>")
+            else compressEither(possibleXml)
+          case Failure(ex) => Left(ex)
+        }
       case _ =>
-        serialize(value) match {
+        serialize(value, options) match {
           case Right(xml) =>
             if (xml == "") Right(s"<$key/>")
             else Right(s"<$key>$xml</$key>")
@@ -73,17 +83,18 @@ object XmlSerializer {
     }
   }
 
-  private def innerSerialize(key: String, innerValue: Any)(implicit mirror: Mirror): Either[Throwable, String] = {
+  private def innerSerialize(key: String, innerValue: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
     val innerValueType: String = getObjSimpleTypeName(innerValue)
     innerValueType match {
       case "Seq" | "Vector" | "$colon$colon" | "String" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
-        coreSerialize(key, innerValue, innerValueType)
-      case _ => serialize(innerValue) match {
-        case Right(xml) =>
-          if (xml == "") Right(s"<$key/>")
-          else Right(s"<$key>$xml</$key>")
-        case Left(ex) => Left(ex)
-      }
+        coreSerialize(key, innerValue, innerValueType, options)
+      case _ =>
+        serialize(innerValue, options) match {
+          case Right(xml) =>
+            if (xml == "") Right(s"<$key/>")
+            else Right(s"<$key>$xml</$key>")
+          case Left(ex) => Left(ex)
+        }
     }
   }
 
@@ -100,9 +111,7 @@ object XmlSerializer {
 
   private def toCamel(input: String): String = {
     val split: Array[Char] = input.toArray
-    val headLetter: String = split.headOption.getOrElse(' ').toLower.toString
-    val everythingElse: String = split.tail.mkString
-    headLetter + everythingElse
+    split.headOption.getOrElse(' ').toLower.toString + split.tail.mkString
   }
 
 }

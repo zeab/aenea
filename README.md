@@ -10,13 +10,18 @@ Xml Serialize:
 import zeab.aenea.XmlSerializer._
 case class MyDoubleClass(myDouble:Double)
 val obj: MyDoubleClass = MyDoubleClass(1.1)
-val serializedXml: Either[Throwable, String] = obj.asXml
+val serializedXml: Either[Throwable, String] = obj.asXml()
 ```
 
 Xml Deserialize:
 ```scala
+import zeab.aenea.XmlDeserializer._
 case class MyBooleanClass(myBoolean:Boolean)
 val expectedType: String = "MyBooleanClass"
 val xml: String = "<myBooleanClass><myBoolean>false</myBoolean></myBooleanClass>"
-val obj = xml.fromXml[MyBooleanClass]
+val obj: Either[Throwable, MyBooleanClass] = xml.fromXml[MyBooleanClass]
 ```
+
+
+
+where a vector and a list are the same or a vector wraps itself in the name and a list does not
