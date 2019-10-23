@@ -56,7 +56,7 @@ object XmlDeserializer {
         .reverse
         .map { symbol: TermSymbol =>
           val nextNode: NodeSeq = xml \ symbol.name.toString.trim
-          if (nextNode.isEmpty) Left(new Exception("node is empty"))
+          if (nextNode.isEmpty) Left(new Exception(s"node is empty cant find it for ${symbol.name.toString.trim} while trying to decode $outputType"))
           else coreDeserialize(nextNode, symbol.typeSignature.resultType.toString.trim, options)
         }
     compressEither(outputClassValues) match {
@@ -78,14 +78,14 @@ object XmlDeserializer {
     outputType match {
       case "Unit" | "Null" => Left(new Exception(s"unsupported type: $outputType"))
       case "String" => Right(xml.text)
-      case "BigDecimal" => returnValueFromTry(Try(BigDecimal(xml.text.toDouble)))
-      case "BigInt" => returnValueFromTry(Try(BigInt(xml.text.toInt)))
-      case "Int" => returnValueFromTry(Try(xml.text.toInt))
-      case "Boolean" => returnValueFromTry(Try(xml.text.toBoolean))
-      case "Double" => returnValueFromTry(Try(xml.text.toDouble))
-      case "Float" => returnValueFromTry(Try(xml.text.toFloat))
-      case "Long" => returnValueFromTry(Try(xml.text.toLong))
-      case "Short" => returnValueFromTry(Try(xml.text.toShort))
+      case "BigDecimal" => returnValueFromTry(BigDecimal(xml.text.toDouble))
+      case "BigInt" => returnValueFromTry(BigInt(xml.text.toInt))
+      case "Int" => returnValueFromTry(xml.text.toInt)
+      case "Boolean" => returnValueFromTry(xml.text.toBoolean)
+      case "Double" => returnValueFromTry(xml.text.toDouble)
+      case "Float" => returnValueFromTry(xml.text.toFloat)
+      case "Long" => returnValueFromTry(xml.text.toLong)
+      case "Short" => returnValueFromTry(xml.text.toShort)
       case tag if tag.startsWith("Option") =>
         val innerType: String = outputType.drop(7).dropRight(1)
         //TODO Make sure this is right... taking the head i mean... I feel that by the time i get here I should be dealing with only 1 node anyways... but just make sure
@@ -136,8 +136,8 @@ object XmlDeserializer {
       eitherValues.collect { case Right(r) => r }
     }
 
-  private def returnValueFromTry(theTry: Try[Any]): Either[Throwable, Any] =
-    theTry match {
+  private def returnValueFromTry(toTry: => Any): Either[Throwable, Any] =
+    Try(toTry) match {
       case Success(tryResult) => Right(tryResult)
       case Failure(ex) => Left(ex)
     }
