@@ -8,9 +8,10 @@ package zeab.aenea
  */
 
 //Imports
+import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
-import scala.xml.Node
+import scala.xml.{Node, NodeSeq}
 import scala.xml.XML.loadString
 
 object XmlDeserializer {
@@ -33,8 +34,10 @@ object XmlDeserializer {
       case Success(actualXml) =>
         typeTag.tpe.toString match {
           case "String" => Right(xml.asInstanceOf[Output])
-          case "BigDecimal" | "BigInt" | "Int" | "Double" | "Float" | "Double" | "Short" | "Long" | "Right" | "Left" => Left(new Exception(s"Must supply a case class to deserializer ${typeTag.tpe} is not valid"))
-          case tag if tag.startsWith("Map") | tag.startsWith("Vector") | tag.startsWith("Set") | tag.startsWith("List") => Left(new Exception(s"Must supply a case class to deserializer ${typeTag.tpe} is not valid"))
+          case "BigDecimal" | "BigInt" | "Int" | "Double" | "Float" | "Double" | "Short" | "Long" | "Right" | "Left" =>
+            Left(new Exception(s"Must supply a case class to deserializer ${typeTag.tpe} is not valid"))
+          case tag if tag.startsWith("Map") | tag.startsWith("Vector") | tag.startsWith("Set") | tag.startsWith("List") =>
+            Left(new Exception(s"Must supply a case class to deserializer ${typeTag.tpe} is not valid"))
           case outputType: String =>
             implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
             deserialize(actualXml.seq, outputType, options) match {
@@ -51,7 +54,11 @@ object XmlDeserializer {
       outputClass.typeSignature.members
         .toList.collect { case termSymbol: TermSymbol if !termSymbol.isMethod => termSymbol: TermSymbol }
         .reverse
-        .map ( symbol => coreDeserialize(xml \ symbol.name.toString.trim, symbol.typeSignature.resultType.toString.trim, options) )
+        .map { symbol: TermSymbol =>
+          val nextNode: NodeSeq = xml \ symbol.name.toString.trim
+          if (nextNode.isEmpty) Left(new Exception("node is empty"))
+          else coreDeserialize(nextNode, symbol.typeSignature.resultType.toString.trim, options)
+        }
     compressEither(outputClassValues) match {
       case Right(values) =>
         val classMirror: ClassMirror = mirror.reflectClass(outputClass)
@@ -103,28 +110,25 @@ object XmlDeserializer {
         if (xml.text == "") Right(List.empty)
         else compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) })
       case tag if tag.startsWith("Vector") =>
-        if (options.find(_._1.toLowerCase == "isvectorwrapped").map(_._2).getOrElse("false").toBoolean){
-          ???
-        }
-        else {
-          val innerType: String = outputType.drop(7).dropRight(1)
-          if (xml.text == "") Right(Vector.empty)
-          else
-            compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) }) match {
-              case Right(value) => Right(value.toVector)
-              case Left(ex) => Left(ex)
-            }
-        }
+        val innerType: String = outputType.drop(7).dropRight(1)
+        if (xml.text == "") Right(Vector.empty)
+        else
+          compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) }) match {
+            case Right(value) => Right(value.toVector)
+            case Left(ex) => Left(ex)
+          }
       case _ => deserialize(xml, outputType, options)
     }
   }
 
   private def innerDeserialize(xml: Seq[Node], outputType: String, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, Any] =
     outputType match {
-      case tag if tag.startsWith("Option") | tag.startsWith("Vector") | tag.startsWith("List") | tag.startsWith("Seq") => coreDeserialize(xml, outputType, options)
+      case tag if tag.startsWith("Option") | tag.startsWith("Vector") | tag.startsWith("List") | tag.startsWith("Seq") =>
+        coreDeserialize(xml, outputType, options)
       case "String" | "Int" | "Double" | "Unit" | "Null" | "BigDecimal" | "BigInt" | "Boolean" | "Float" | "Long" | "Short" =>
         coreDeserialize(xml, outputType, options)
-      case _ => deserialize(xml, outputType, options)
+      case _ =>
+        deserialize(xml, outputType, options)
     }
 
   private def compressEither(eitherValues: Seq[Either[Throwable, Any]]): Either[Throwable, Seq[Any]] =
