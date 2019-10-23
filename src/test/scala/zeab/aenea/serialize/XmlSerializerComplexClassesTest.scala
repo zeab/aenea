@@ -1,11 +1,11 @@
 package zeab.aenea.serialize
 
 //Imports
-import zeab.aenea.MasterSpec
+import zeab.aenea.MasterTest
 import zeab.aenea.XmlSerializer._
 import zeab.aenea.modelsfortest.complexclasses.{Horse, Item, Person}
 
-class XmlSerializerComplexClassesSpec extends MasterSpec {
+class XmlSerializerComplexClassesTest extends MasterTest {
 
   test("Person One Serialize") {
     val mount: Horse = Horse("daisy", 1.4, List.empty)

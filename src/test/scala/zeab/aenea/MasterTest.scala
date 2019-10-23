@@ -2,7 +2,7 @@ package zeab.aenea
 
 import org.scalatest.{Assertion, FunSuite}
 
-class MasterSpec extends FunSuite{
+class MasterTest extends FunSuite{
 
   def compareErrorResults(expected: String, actual: Either[Throwable, String]): Assertion ={
     actual match {
@@ -17,5 +17,15 @@ class MasterSpec extends FunSuite{
       case Left(ex) => fail(ex)
     }
   }
+
+  def compareObj[T](actual: Either[Throwable, T], expected: T): Assertion ={
+    actual match{
+      case Right(value) => assert(value == expected)
+      case Left(ex) => fail(ex)
+    }
+  }
+
+  def validXml(key: String, value: String): String =
+    s"<my${key}Class><my$key>$value</my$key></my${key}Class>"
 
 }

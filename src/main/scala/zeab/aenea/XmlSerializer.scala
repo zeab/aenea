@@ -68,7 +68,7 @@ object XmlSerializer {
             }
           case Failure(ex) => Left(ex)
         }
-      case "$colon$colon" | "Vector" | "Seq" =>
+      case "$colon$colon" | "Seq" =>
         Try(value.asInstanceOf[Seq[Any]]) match {
           case Success(casedValue) =>
             val possibleXml: Seq[Either[Throwable, String]] =
@@ -77,6 +77,36 @@ object XmlSerializer {
             else compressEither(possibleXml)
           case Failure(ex) => Left(ex)
         }
+      case "Vector" =>
+        if (options.find(_._1.toLowerCase == "isvectorwrapped").map(_._2).getOrElse("false").toBoolean)
+          Try(value.asInstanceOf[Seq[Any]]) match {
+            case Success(casedValue) =>
+              val possibleXml: Seq[Either[Throwable, String]] =
+                casedValue.map { innerValue: Any =>
+                  innerValue.getClass.getSimpleName match {
+                    case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
+                      innerSerialize(key, innerValue, options)
+                    case _ => innerSerialize(toCamel(innerValue.getClass.getSimpleName), innerValue, options)
+                  }
+                }
+              if (possibleXml.isEmpty) Right(s"<$key/>")
+              else compressEither(possibleXml) match {
+                case Right(xml) =>
+                  if (xml.isEmpty) Right(s"<$key/>")
+                  else Right(s"<$key>$xml</$key>")
+                case Left(ex) => Left(ex)
+              }
+            case Failure(ex) => Left(ex)
+          }
+        else
+          Try(value.asInstanceOf[Seq[Any]]) match {
+            case Success(casedValue) =>
+              val possibleXml: Seq[Either[Throwable, String]] =
+                casedValue.map ( innerValue => innerSerialize(key, innerValue, options) )
+              if (possibleXml.isEmpty) Right(s"<$key/>")
+              else compressEither(possibleXml)
+            case Failure(ex) => Left(ex)
+          }
       case _ =>
         serialize(value, options) match {
           case Right(xml) =>

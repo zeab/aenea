@@ -1,10 +1,10 @@
 package zeab.aenea.serialize
 
 //Imports
-import zeab.aenea.MasterSpec
+import zeab.aenea.MasterTest
 import zeab.aenea.XmlSerializer._
 
-class XmlSerializerPrimitivesSpec extends MasterSpec {
+class XmlSerializerPrimitivesTest extends MasterTest {
 
   test("Unit: Error Serialize") {
     val serializedXml: Either[Throwable, String] = ().asXml()

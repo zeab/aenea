@@ -26,3 +26,6 @@ Ability to use a null value to completely remove the xml from the
 For numeric values you must use the java values like Doubles
 
 Ability to use vectors and lists as different types of collections so they wrap differently
+
+isnullaccepted
+isvectorwrapped
