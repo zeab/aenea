@@ -1,12 +1,12 @@
 package zeab.aenea.serialize
 
 //Imports
-import zeab.aenea.MasterTest
+import zeab.aenea.MasterSuite
 import zeab.aenea.XmlSerializer._
 import zeab.aenea.modelsfortest.complexclasses.{Backpack, Item}
 import zeab.aenea.modelsfortest.singleclasses.primitives.{MyJavaDoubleClass, MyStringClass}
 
-class XmlSerializerOptionsTest extends MasterTest {
+class XmlSerializerOptionsSpec extends MasterSuite {
 
   test("Double: Null Serialize") {
     val obj: MyJavaDoubleClass = MyJavaDoubleClass(null)

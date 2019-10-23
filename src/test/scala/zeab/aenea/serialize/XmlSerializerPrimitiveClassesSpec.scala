@@ -1,11 +1,11 @@
 package zeab.aenea.serialize
 
 //Imports
-import zeab.aenea.MasterTest
+import zeab.aenea.MasterSuite
 import zeab.aenea.XmlSerializer._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
 
-class XmlSerializerPrimitiveClassesTest extends MasterTest {
+class XmlSerializerPrimitiveClassesSpec extends MasterSuite {
 
   test("Double: Serialize") {
     val obj: MyDoubleClass = MyDoubleClass(1.1)

@@ -2,7 +2,7 @@ package zeab.aenea
 
 import org.scalatest.{Assertion, FunSuite}
 
-class MasterTest extends FunSuite{
+class MasterSuite extends FunSuite{
 
   def compareErrorResults(expected: String, actual: Either[Throwable, String]): Assertion ={
     actual match {

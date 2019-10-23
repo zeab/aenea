@@ -1,11 +1,11 @@
 package zeab.aenea.deserialize
 
 //Imports
-import zeab.aenea.MasterTest
+import zeab.aenea.MasterSuite
 import zeab.aenea.XmlDeserializer._
 import zeab.aenea.modelsfortest.singleclasses.primitives._
 
-class XmlDeserializerPrimitiveClassesTest extends MasterTest {
+class XmlDeserializerPrimitiveClassesSpec extends MasterSuite {
 
   test("Double: Deserialize") {
     val xml: String = validXml("Double", 1.1.toString)

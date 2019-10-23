@@ -8,7 +8,6 @@ package zeab.aenea
  */
 
 //Imports
-import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Node, NodeSeq}
@@ -109,10 +108,13 @@ object XmlDeserializer {
         if (xml.text == "") Right(List.empty)
         else compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) })
       case tag if tag.startsWith("Vector") =>
+
         val innerType: String = outputType.drop(7).dropRight(1)
+        val ggg = toCamel(innerType.split('.').lastOption.getOrElse("none"))
+
         if (xml.text == "") Right(Vector.empty)
         else
-          compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) }) match {
+          compressEither(xml.map { node: Node => innerDeserialize(node \ ggg, innerType, options) }) match {
             case Right(value) => Right(value.toVector)
             case Left(ex) => Left(ex)
           }
@@ -140,5 +142,10 @@ object XmlDeserializer {
       case Success(tryResult) => Right(tryResult)
       case Failure(ex) => Left(ex)
     }
+
+  private def toCamel(input: String): String = {
+    val split: Array[Char] = input.toArray
+    split.headOption.getOrElse(' ').toLower.toString + split.tail.mkString
+  }
 
 }
