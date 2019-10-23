@@ -13,13 +13,13 @@ import scala.util.{Failure, Success, Try}
 
 object XmlSerializer {
 
-  implicit class XmlSerialize(val obj: Any) extends AnyVal {
+  implicit class XmlSerialize(val obj: Any) {
     def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = {
       implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
       val objSimpleType: String = getObjSimpleTypeName(obj)
       (objSimpleType match {
         case "String" => Right(obj.toString)
-        case "Vector" | "$colon$colon" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "Nil$" | "BigDecimal" | "BigInt" =>
+        case "Vector" | "$colon$colon" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "BoxedUnit" | "Nil$" | "BigDecimal" | "BigInt" =>
           Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
         case tag if tag.startsWith("Map") | tag.startsWith("Set") | tag.startsWith("Seq") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
         case _ => serialize(obj, options)
@@ -33,6 +33,10 @@ object XmlSerializer {
         case Left(ex) => Left(ex)
       }
     }
+  }
+
+  implicit class XmlSerializeNull(val obj: Null){
+    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = Left(new Exception("Base object cannot be null"))
   }
 
   private def serialize(obj: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
