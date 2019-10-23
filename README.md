@@ -19,9 +19,10 @@ import zeab.aenea.XmlDeserializer._
 case class MyBooleanClass(myBoolean:Boolean)
 val expectedType: String = "MyBooleanClass"
 val xml: String = "<myBooleanClass><myBoolean>false</myBoolean></myBooleanClass>"
-val obj: Either[Throwable, MyBooleanClass] = xml.fromXml[MyBooleanClass]
+val obj: Either[Throwable, MyBooleanClass] = xml.fromXml[MyBooleanClass]()
 ```
+Advanced Options:
+Ability to use a null value to completely remove the xml from the 
+For numeric values you must use the java values like Doubles
 
-
-
-where a vector and a list are the same or a vector wraps itself in the name and a list does not
+Ability to use vectors and lists as different types of collections so they wrap differently

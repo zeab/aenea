@@ -1,12 +1,11 @@
 package zeab.aenea.serialize
 
 //Imports
+import zeab.aenea.MasterSpec
 import zeab.aenea.XmlSerializer._
 import zeab.aenea.modelsfortest.complexclasses.{Horse, Item, Person}
-//ScalaTest
-import org.scalatest.FunSuite
 
-class XmlSerializerComplexClassesSpec extends FunSuite {
+class XmlSerializerComplexClassesSpec extends MasterSpec {
 
   test("Person One Serialize") {
     val mount: Horse = Horse("daisy", 1.4, List.empty)
@@ -15,12 +14,7 @@ class XmlSerializerComplexClassesSpec extends FunSuite {
     val obj: Person = person
     val serializedXml: Either[Throwable, String] = obj.asXml()
     val expectedXml: String = "<person><name>bob</name><class>warlock</class><level>9</level><health>87.3</health><soulStone/><mount><name>daisy</name><speed>1.4</speed><backpack/></mount><backpack><name>sword</name><type>attack</type></backpack><backpack><name>shield</name><type>defense</type></backpack><previousDestinations>Hogwarts</previousDestinations><previousDestinations>Yavin 4</previousDestinations></person>"
-    assert {
-      serializedXml match {
-        case Right(xml) => xml == expectedXml
-        case Left(_) => false
-      }
-    }
+    compareResults(expectedXml, serializedXml)
   }
 
   test("Person Two Serialize") {
@@ -28,12 +22,7 @@ class XmlSerializerComplexClassesSpec extends FunSuite {
     val obj: Person = person
     val serializedXml: Either[Throwable, String] = obj.asXml()
     val expectedXml: String = "<person><name>bob</name><class>warlock</class><level>9</level><health>87.3</health><soulStone>true</soulStone><mount/><backpack/><previousDestinations/></person>"
-    assert {
-      serializedXml match {
-        case Right(xml) => xml == expectedXml
-        case Left(_) => false
-      }
-    }
+    compareResults(expectedXml, serializedXml)
   }
 
 }

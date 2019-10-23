@@ -16,12 +16,12 @@ import scala.xml.{Node, NodeSeq}
 object XmlDeserializer {
 
   implicit class XmlDeserializeFromString(val xml: String) {
-    def fromXml[Output](options: Map[String, String])(implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
+    def fromXml[Output](options: Map[String, String] = Map.empty)(implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
       handleDeserialize[Output](xml, options)
   }
 
   implicit class XmlDeserializeFromEither(val possibleXml: Either[Throwable, String]) {
-    def fromXml[Output](options: Map[String, String])(implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
+    def fromXml[Output](options: Map[String, String] = Map.empty)(implicit typeTag: TypeTag[Output]): Either[Throwable, Output] =
       possibleXml match {
         case Right(xml) => handleDeserialize[Output](xml, options)
         case Left(ex) => Left(ex)
