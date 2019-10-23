@@ -112,7 +112,8 @@ object XmlSerializer {
           case Right(xml) =>
             if (xml == "") Right(s"<$key/>")
             else Right(s"<$key>$xml</$key>")
-          case Left(ex) => Left(ex)
+          case Left(ex) =>
+            Left(ex)
         }
     }
   }

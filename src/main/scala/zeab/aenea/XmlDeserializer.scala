@@ -88,7 +88,6 @@ object XmlDeserializer {
       case "Short" => returnValueFromTry(xml.text.toShort)
       case tag if tag.startsWith("Option") =>
         val innerType: String = outputType.drop(7).dropRight(1)
-        //TODO Make sure this is right... taking the head i mean... I feel that by the time i get here I should be dealing with only 1 node anyways... but just make sure
         xml.headOption match {
           case Some(node) =>
             node.text match {
