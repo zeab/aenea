@@ -115,10 +115,10 @@ class XmlSerializerPrimitivesSpec extends MasterSpec {
     compareErrorResults(expectedError, serializedXml)
   }
 
-  test("Null Error Serialize") {
-    val serializedXml: Either[Throwable, String] = XmlSerializeNull(null).asXml()
-    val expectedError: String = "Base object cannot be null"
-    compareErrorResults(expectedError, serializedXml)
-  }
+//  test("Null Error Serialize") {
+//    val serializedXml: Either[Throwable, String] = XmlSerializeNull(null).asXml()
+//    val expectedError: String = "Base object cannot be null"
+//    compareErrorResults(expectedError, serializedXml)
+//  }
 
 }

@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 object XmlSerializer {
 
-  implicit class XmlSerialize(val obj: Any) {
+  implicit class XmlSerialize(val obj: Any) extends AnyVal {
     def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = {
       implicit val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
       val objSimpleType: String = getObjSimpleTypeName(obj)
@@ -35,9 +35,9 @@ object XmlSerializer {
     }
   }
 
-  implicit class XmlSerializeNull(val obj: Null){
-    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = Left(new Exception("Base object cannot be null"))
-  }
+//  implicit class XmlSerializeNull(val obj: Null){
+//    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = Left(new Exception("Base object cannot be null"))
+//  }
 
   private def serialize(obj: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
     val objInstanceMirror: InstanceMirror = mirror.reflect(obj)
