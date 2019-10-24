@@ -81,7 +81,9 @@ object XmlDeserializer {
       case "BigInt" => returnValueFromTry(BigInt(xml.text.toInt))
       case "Int" => returnValueFromTry(xml.text.toInt)
       case "Boolean" => returnValueFromTry(xml.text.toBoolean)
-      case "Double" => returnValueFromTry(xml.text.toDouble)
+      case "Double" =>
+        val gg = xml.text
+        returnValueFromTry(xml.text.toDouble)
       case "Float" => returnValueFromTry(xml.text.toFloat)
       case "Long" => returnValueFromTry(xml.text.toLong)
       case "Short" => returnValueFromTry(xml.text.toShort)
@@ -108,15 +110,19 @@ object XmlDeserializer {
         if (xml.text == "") Right(List.empty)
         else compressEither(xml.map { node: Node => innerDeserialize(node, innerType, options) })
       case tag if tag.startsWith("Vector") =>
-
         val innerType: String = outputType.drop(7).dropRight(1)
-        val ggg = toCamel(innerType.split('.').lastOption.getOrElse("none"))
-
         if (xml.text == "") Right(Vector.empty)
         else
-          compressEither(xml.map { node: Node => innerDeserialize(node \ ggg, innerType, options) }) match {
+          compressEither(xml.map ( node => innerDeserialize(node, innerType, options) )) match {
             case Right(value) => Right(value.toVector)
-            case Left(ex) => Left(ex)
+            case Left(_) =>
+              val innerNodeType: String = toCamel(innerType.split('.').lastOption.getOrElse(""))
+              //prolly need to do a primitive check here on the inner type
+              compressEither((xml \ innerNodeType)
+                .map(innerNode => innerDeserialize(innerNode, innerType, options))) match {
+                case Right(value) => Right(value.toVector)
+                case Left(ex) => Left(ex)
+              }
           }
       case _ => deserialize(xml, outputType, options)
     }
@@ -140,7 +146,7 @@ object XmlDeserializer {
   private def returnValueFromTry(toTry: => Any): Either[Throwable, Any] =
     Try(toTry) match {
       case Success(tryResult) => Right(tryResult)
-      case Failure(ex) => Left(ex)
+      case Failure(ex) => Left(new Exception("mmooose"))
     }
 
   private def toCamel(input: String): String = {
