@@ -117,7 +117,7 @@ class XmlSerializerPrimitivesSpec extends MasterSuite {
 
   test("Null: Error Serialize") {
     val serializedXml: Either[Throwable, String] = XmlSerializeNull(null).asXml()
-    val expectedError: String = "Base object cannot be null"
+    val expectedError: String = "Must be a case class at root level cannot serialize : null"
     compareErrorResults(expectedError, serializedXml)
   }
 

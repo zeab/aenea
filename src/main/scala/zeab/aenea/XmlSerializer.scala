@@ -8,6 +8,8 @@ package zeab.aenea
  */
 
 //Imports
+import zeab.aenea.customexceptions.{InvalidCaseClassException, SerializationException}
+//Scala
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
 
@@ -20,8 +22,9 @@ object XmlSerializer {
       (objSimpleType match {
         case "String" => Right(obj.toString)
         case "Vector" | "$colon$colon" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "BoxedUnit" | "Nil$" | "BigDecimal" | "BigInt" =>
-          Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
-        case tag if tag.startsWith("Map") | tag.startsWith("Set") | tag.startsWith("Seq") => Left(new Exception(s"Must be a case class at root level cannot serialize : $objSimpleType"))
+          Left(SerializationException("root", obj, InvalidCaseClassException(objSimpleType)))
+        case tag if tag.startsWith("Map") | tag.startsWith("Set") | tag.startsWith("Seq") =>
+          Left(SerializationException("root", obj, InvalidCaseClassException(objSimpleType)))
         case _ => serialize(obj, options)
       }) match {
         case Right(innerXml) =>
@@ -36,7 +39,8 @@ object XmlSerializer {
   }
 
   implicit class XmlSerializeNull(val obj: Null){
-    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] = Left(new Exception("Base object cannot be null"))
+    def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] =
+      Left(SerializationException("root", "null", InvalidCaseClassException("null")))
   }
 
   private def serialize(obj: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
@@ -55,7 +59,7 @@ object XmlSerializer {
     valueType match {
       case "Null" =>
         if (options.find(_._1.toLowerCase == "isnullaccepted").map(_._2).getOrElse("false").toBoolean) Right("")
-        else Left(new Exception("Unable to serialize a null"))
+        else Left(SerializationException(key, "null", InvalidCaseClassException("null")))
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
         if (value == "") Right(s"<$key/>")
         else Right(s"<$key>$value</$key>")
@@ -66,7 +70,7 @@ object XmlSerializer {
               case Some(innerValue) => innerSerialize(key, innerValue, options)
               case None => Right(s"<$key/>")
             }
-          case Failure(ex) => Left(ex)
+          case Failure(ex) => Left(SerializationException(key, value, ex))
         }
       case "$colon$colon" | "Seq" =>
         Try(value.asInstanceOf[Seq[Any]]) match {
@@ -75,7 +79,7 @@ object XmlSerializer {
               casedValue.map { innerValue: Any => innerSerialize(key, innerValue, options) }
             if (possibleXml.isEmpty) Right(s"<$key/>")
             else compressEither(possibleXml)
-          case Failure(ex) => Left(ex)
+          case Failure(ex) => Left(SerializationException(key, value, ex))
         }
       case "Vector" =>
         if (options.find(_._1.toLowerCase == "isvectorwrapped").map(_._2).getOrElse("false").toBoolean)
@@ -94,9 +98,9 @@ object XmlSerializer {
                 case Right(xml) =>
                   if (xml.isEmpty) Right(s"<$key/>")
                   else Right(s"<$key>$xml</$key>")
-                case Left(ex) => Left(ex)
+                case Left(ex) => Left(SerializationException(key, value, ex))
               }
-            case Failure(ex) => Left(ex)
+            case Failure(ex) => Left(SerializationException(key, value, ex))
           }
         else
           Try(value.asInstanceOf[Seq[Any]]) match {
@@ -105,15 +109,14 @@ object XmlSerializer {
                 casedValue.map ( innerValue => innerSerialize(key, innerValue, options) )
               if (possibleXml.isEmpty) Right(s"<$key/>")
               else compressEither(possibleXml)
-            case Failure(ex) => Left(ex)
+            case Failure(ex) => Left(SerializationException(key, value, ex))
           }
       case _ =>
         serialize(value, options) match {
           case Right(xml) =>
             if (xml == "") Right(s"<$key/>")
             else Right(s"<$key>$xml</$key>")
-          case Left(ex) =>
-            Left(ex)
+          case Left(ex) => Left(SerializationException(key, value, ex))
         }
     }
   }
@@ -128,7 +131,7 @@ object XmlSerializer {
           case Right(xml) =>
             if (xml == "") Right(s"<$key/>")
             else Right(s"<$key>$xml</$key>")
-          case Left(ex) => Left(ex)
+          case Left(ex) => Left(SerializationException(key, innerValue, ex))
         }
     }
   }

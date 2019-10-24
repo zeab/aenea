@@ -7,7 +7,11 @@ class MasterSuite extends FunSuite{
   def compareErrorResults(expected: String, actual: Either[Throwable, String]): Assertion ={
     actual match {
       case Right(_) => fail(s"$expected does not equal $actual")
-      case Left(ex) => assert(ex.getMessage == expected, ex)
+      case Left(ex) =>
+        val hhh = ex.getCause.toString
+        val jj = ex.getCause.getMessage
+//        val gg = ex.getCause.getCause.toString
+        assert(ex.getCause.getMessage == expected, ex)
     }
   }
 
