@@ -8,10 +8,11 @@ package zeab.aenea
  */
 
 //Imports
+
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Node, NodeSeq}
 import scala.xml.XML.loadString
+import scala.xml.{Node, NodeSeq}
 
 object XmlDeserializer {
 
@@ -81,9 +82,7 @@ object XmlDeserializer {
       case "BigInt" => returnValueFromTry(BigInt(xml.text.toInt))
       case "Int" => returnValueFromTry(xml.text.toInt)
       case "Boolean" => returnValueFromTry(xml.text.toBoolean)
-      case "Double" =>
-        val gg = xml.text
-        returnValueFromTry(xml.text.toDouble)
+      case "Double" => returnValueFromTry(xml.text.toDouble)
       case "Float" => returnValueFromTry(xml.text.toFloat)
       case "Long" => returnValueFromTry(xml.text.toLong)
       case "Short" => returnValueFromTry(xml.text.toShort)
@@ -113,11 +112,10 @@ object XmlDeserializer {
         val innerType: String = outputType.drop(7).dropRight(1)
         if (xml.text == "") Right(Vector.empty)
         else
-          compressEither(xml.map ( node => innerDeserialize(node, innerType, options) )) match {
+          compressEither(xml.map(node => innerDeserialize(node, innerType, options))) match {
             case Right(value) => Right(value.toVector)
             case Left(_) =>
               val innerNodeType: String = toCamel(innerType.split('.').lastOption.getOrElse(""))
-              //prolly need to do a primitive check here on the inner type
               compressEither((xml \ innerNodeType)
                 .map(innerNode => innerDeserialize(innerNode, innerType, options))) match {
                 case Right(value) => Right(value.toVector)

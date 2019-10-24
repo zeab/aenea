@@ -30,16 +30,16 @@ class XmlSerializerOptionsSpec extends MasterSuite {
   }
 
   test("Backpack: Vector Wrap Enabled Serialize") {
-    val obj: Backpack = Backpack(Vector(Item("sword of awesome", "sword"), Item("shield hand", "shield")))
+    val obj: Backpack = Backpack("bert", 5, Vector(Item("sword-of-death", "sword"), Item("shieldhand", "shield")))
     val serializedXml: Either[Throwable, String] = obj.asXml(Map("isvectorwrapped" -> "true"))
-    val expectedXml: String = "<backpack><items><item><name>sword of awesome</name><type>sword</type></item><item><name>shield hand</name><type>shield</type></item></items></backpack>"
+    val expectedXml: String = "<backpack><owner>bert</owner><currentWeight>5</currentWeight><items><item><name>sword-of-death</name><type>sword</type></item><item><name>shieldhand</name><type>shield</type></item></items></backpack>"
     compareResults(expectedXml, serializedXml)
   }
 
   test("Backpack: Vector Wrap Disabled Serialize") {
-    val obj: Backpack = Backpack(Vector(Item("sword of awesome", "sword"), Item("shield hand", "shield")))
+    val obj: Backpack = Backpack("bert", 5, Vector(Item("sword-of-death", "sword"), Item("shieldhand", "shield")))
     val serializedXml: Either[Throwable, String] = obj.asXml()
-    val expectedXml: String = "<backpack><items><name>sword of awesome</name><type>sword</type></items><items><name>shield hand</name><type>shield</type></items></backpack>"
+    val expectedXml: String = "<backpack><owner>bert</owner><currentWeight>5</currentWeight><items><name>sword-of-death</name><type>sword</type></items><items><name>shieldhand</name><type>shield</type></items></backpack>"
     compareResults(expectedXml, serializedXml)
   }
 

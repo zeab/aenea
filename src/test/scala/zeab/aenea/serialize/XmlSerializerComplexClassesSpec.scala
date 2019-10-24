@@ -7,7 +7,7 @@ import zeab.aenea.modelsfortest.complexclasses.{Horse, Item, Person}
 
 class XmlSerializerComplexClassesSpec extends MasterSuite {
 
-  test("Person One Serialize") {
+  test("Person: Variation(1) Serialize") {
     val mount: Horse = Horse("daisy", 1.4, List.empty)
     val backpack: List[Item] = List(Item("sword", "attack"), Item("shield", "defense"))
     val person: Person = Person("bob", "warlock", 9, 87.3, None, Some(mount), backpack, List("Hogwarts", "Yavin 4"))
@@ -17,7 +17,7 @@ class XmlSerializerComplexClassesSpec extends MasterSuite {
     compareResults(expectedXml, serializedXml)
   }
 
-  test("Person Two Serialize") {
+  test("Person: Variation(2) Serialize") {
     val person: Person = Person("bob", "warlock", 9, 87.3, Some(true), None, List.empty, List.empty)
     val obj: Person = person
     val serializedXml: Either[Throwable, String] = obj.asXml()
