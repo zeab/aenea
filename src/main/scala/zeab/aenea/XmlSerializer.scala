@@ -8,7 +8,7 @@ package zeab.aenea
  */
 
 //Imports
-import zeab.aenea.customexceptions.{InvalidCaseClassException, SerializationException}
+import zeab.aenea.customexceptions.{NotCaseClassException, SerializationException}
 //Scala
 import scala.reflect.runtime.universe._
 import scala.util.{Failure, Success, Try}
@@ -22,9 +22,9 @@ object XmlSerializer {
       (objSimpleType match {
         case "String" => Right(obj.toString)
         case "Vector" | "$colon$colon" | "Integer" | "Double" | "Boolean" | "Short" | "Long" | "Float" | "Some" | "None$" | "Right" | "Left" | "Null" | "Unit" | "BoxedUnit" | "Nil$" | "BigDecimal" | "BigInt" =>
-          Left(SerializationException("root", obj, InvalidCaseClassException(objSimpleType)))
+          Left(SerializationException("root", obj, NotCaseClassException(objSimpleType)))
         case tag if tag.startsWith("Map") | tag.startsWith("Set") | tag.startsWith("Seq") =>
-          Left(SerializationException("root", obj, InvalidCaseClassException(objSimpleType)))
+          Left(SerializationException("root", obj, NotCaseClassException(objSimpleType)))
         case _ => serialize(obj, options)
       }) match {
         case Right(innerXml) =>
@@ -40,7 +40,7 @@ object XmlSerializer {
 
   implicit class XmlSerializeNull(val obj: Null){
     def asXml(options:Map[String, String] = Map.empty): Either[Throwable, String] =
-      Left(SerializationException("root", "null", InvalidCaseClassException("null")))
+      Left(SerializationException("root", "null", NotCaseClassException("null")))
   }
 
   private def serialize(obj: Any, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
@@ -59,7 +59,7 @@ object XmlSerializer {
     valueType match {
       case "Null" =>
         if (options.find(_._1.toLowerCase == "isnullaccepted").map(_._2).getOrElse("false").toBoolean) Right("")
-        else Left(SerializationException(key, "null", InvalidCaseClassException("null")))
+        else Left(SerializationException(key, "null", NotCaseClassException("null")))
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
         if (value == "") Right(s"<$key/>")
         else Right(s"<$key>$value</$key>")

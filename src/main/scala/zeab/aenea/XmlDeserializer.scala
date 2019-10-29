@@ -144,7 +144,7 @@ object XmlDeserializer {
   private def returnValueFromTry(toTry: => Any): Either[Throwable, Any] =
     Try(toTry) match {
       case Success(tryResult) => Right(tryResult)
-      case Failure(ex) => Left(new Exception("mmooose"))
+      case Failure(ex) => Left(ex)
     }
 
   private def toCamel(input: String): String = {
