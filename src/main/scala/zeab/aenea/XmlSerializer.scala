@@ -58,7 +58,7 @@ object XmlSerializer {
   private def coreSerialize(key: String, value: Any, valueType: String, options: Map[String, String])(implicit mirror: Mirror): Either[Throwable, String] = {
     valueType match {
       case "Null" =>
-        if (options.find(_._1.toLowerCase == "isnullaccepted").map(_._2).getOrElse("false").toBoolean) Right("")
+        if (options.find{ case (metadataKey:String, _) => metadataKey.toLowerCase == "isnullaccepted"}.map{case (_, value:String) => value}.getOrElse("false").toBoolean) Right("")
         else Left(SerializationException(key, "null", NotCaseClassException("null")))
       case "String" | "Integer" | "Double" | "Boolean" | "Long" | "Short" | "Float" | "BigDecimal" | "BigInt" =>
         if (value == "") Right(s"<$key/>")
@@ -82,7 +82,7 @@ object XmlSerializer {
           case Failure(ex) => Left(SerializationException(key, value, ex))
         }
       case "Vector" =>
-        if (options.find(_._1.toLowerCase == "isvectorwrapped").map(_._2).getOrElse("false").toBoolean)
+        if (options.find{ case (metadataKey:String, _) => metadataKey.toLowerCase == "isvectorwrapped"}.map{case (_, value:String) => value}.getOrElse("false").toBoolean)
           Try(value.asInstanceOf[Seq[Any]]) match {
             case Success(casedValue) =>
               val possibleXml: Seq[Either[Throwable, String]] =
